@@ -26,6 +26,11 @@ Non invia inviti email: email di produzione ancora da verificare.
 Passo 12 implementato come avvisi locali di prossimità: opt-in, solo mentre la
 mappa è visibile, posizione non salvata né inviata. Web Push in background resta
 spento e richiede VAPID e verifiche browser/server.
+Passo 13: preflight TWA aggiunto, ma APK/AAB non generato. Mancano dominio HTTPS,
+package ID e certificato di firma confermati; Play Console, JDK/Android SDK/ADB e
+Bubblewrap non sono disponibili né attivati.
+Passo 14: gate locali e checklist release raccolti; il prodotto non è pronto per
+una release pubblica finché i prerequisiti esterni elencati non sono chiusi.
 PostgreSQL reale, email di produzione e account reali restano da verificare;
 non è un backup né una sync in background.
 Dal 2026-10-26 l'utente autorizza a procedere senza approvazioni intermedie,
@@ -37,6 +42,7 @@ preservando ordine dei passi, budget e vincoli.
 - [Design system e verifiche](docs/design-system.md)
 - [Anteprima componenti](packages/design-system/preview.html)
 - [Shell PWA: avvio e verifiche](docs/pwa-shell.md)
+- [Readiness e gap di rilascio](docs/release-readiness.md)
 
 ## Decisioni architetturali
 
@@ -65,6 +71,16 @@ preservando ordine dei passi, budget e vincoli.
 | [0021](docs/adr/0021-link-and-screenshot-import.md) | Import manuale link/screenshot e protezioni SSRF |
 | [0022](docs/adr/0022-trip-collaboration.md) | Membership e ruoli nella sync condivisa |
 | [0023](docs/adr/0023-foreground-location-alerts.md) | Posizione foreground e avvisi locali |
+| [0024](docs/adr/0024-google-play-twa-readiness.md) | Preflight TWA e gate Google Play |
+
+## Preflight TWA
+
+Dopo avere dominio HTTPS, package ID e fingerprint del certificato di firma
+confermati, valorizzare `TWA_ORIGIN`, `TWA_APPLICATION_ID` e
+`TWA_SHA256_CERT_FINGERPRINT`, quindi eseguire `npm run check:twa`. Il comando
+verifica la manifest pubblicata e `/.well-known/assetlinks.json`; non genera
+chiavi, APK/AAB o upload Play. Usare la fingerprint della chiave che firma l'app
+distribuita, verificando la configurazione Play App Signing.
 
 ## Consultazione e avvio
 
@@ -125,7 +141,7 @@ I due originali sono preservati, compreso il refuso sul numero delle categorie.
 - Confermare budget API e hosting di 0 EUR/mese e stop alle quote gratuite esaurite.
 - Confermare italiano e inglese, email/password e uso locale senza account.
 - Verificare la separazione tra fatti, ipotesi e decisioni aperte nelle fondamenta.
-- Aprire tutti i 23 ADR e controllare motivazioni, alternative, conseguenze e fonti.
+- Aprire tutti i 24 ADR e controllare motivazioni, alternative, conseguenze e fonti.
 - Aprire Mappa, selezionare un viaggio, controllare pin/cluster e provare selezione
 	lista↔mappa e inserimento manuale da click.
 - Verificare che tile non siano in cache service worker e che LocationIQ resti

@@ -18,7 +18,8 @@
     "test": "node --test scripts/*.test.mjs",
     "check": "tsc --noEmit",
     "test:design": "node scripts/check-design-browser.mjs",
-    "test:pwa": "node scripts/check-pwa-build.mjs"
+    "test:pwa": "node scripts/check-pwa-build.mjs",
+    "check:twa": "node scripts/check-twa-readiness.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

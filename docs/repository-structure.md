@@ -1,6 +1,8 @@
 # Struttura del repository
 
-Stato: passi 4-12 implementati localmente. Passo 4: dominio, contratti, API, repository e
+Stato: passi 4-12 implementati localmente; passo 13 preflight TWA e passo 14
+checklist release preparati. Il prodotto non è ancora release-ready. Passo 4:
+dominio, contratti, API, repository e
 migrazioni presenti; server PostgreSQL/email produzione restano da verificare.
 Passo 5: core viaggi locale Dexie. Passo 6: MapLibre, OpenFreeMap e adapter API
 geospaziali presenti; LocationIQ resta opt-in, ORS non selezionato. I due kit

@@ -95,6 +95,8 @@ npm non ha segnalato vulnerabilita' note, senza garanzia di assenza di rischi.
 - Dopo caricamento completo, disabilitare rete e ricaricare `/trips` e `/settings`.
 - Controllare Offline: shell disponibile non deve essere confusa con mappe scaricate.
 - Su hosting HTTPS, provare installazione Android, avvio dalla home e offline.
+- Prima del wrapper TWA, eseguire `npm run check:twa` e verificare app signing,
+  Digital Asset Links pubblicato, fallback Custom Tab e permessi su Android fisico.
 - Verificare lettore di schermo e zoom 200% prima del rilascio pubblico.
 
 ## Blocco esterno e prossimi passi
@@ -102,7 +104,8 @@ npm non ha segnalato vulnerabilita' note, senza garanzia di assenza di rischi.
 Non esistono dominio/hosting configurati o account provider. La verifica Android
 da un telefono richiede un'origine HTTPS pubblica o un ambiente HTTPS di test
 attendibile sul dispositivo; l'URL localhost del PC non e' quello del telefono.
-Nessun hosting viene attivato automaticamente e nessun budget modificato.
+Nessun hosting viene attivato automaticamente e nessun budget modificato. Il
+preflight TWA non crea un pacchetto né sostituisce il test Android/HTTPS.
 
 Prima di pubblicare backend/account occorrono PostgreSQL accessibile, policy
 backup e un mittente email verificato; non omettere verifica email o recupero
