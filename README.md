@@ -6,12 +6,14 @@ Codice proprietario. App pubblica gratuita, inizialmente per circa 10 utenti att
 
 ## Stato
 
-Passo 0: fondamenta decisionali documentate il 2026-10-26, sulla base della
-proposta approvata dall'utente. Nessuna applicazione, dipendenza o integrazione
-installata. Il passo 1 richiede un nuovo OK esplicito.
+Passi 0 e 1 completati; ricerca servizi con raccomandazioni condizionate.
+Nessuna applicazione, dipendenza o integrazione installata.
+Dal 2026-10-26 l'utente autorizza a procedere senza approvazioni intermedie,
+preservando ordine dei passi, budget e vincoli.
 
 - [Fondamenta e questioni aperte](docs/foundations.md)
 - [Struttura del repository](docs/repository-structure.md)
+- [Ricerca servizi esterni](docs/service-selection.md)
 
 ## Decisioni architetturali
 
@@ -27,6 +29,7 @@ installata. Il passo 1 richiede un nuovo OK esplicito.
 | [0008](docs/adr/0008-optional-ai.md) | AI opzionale e minimizzazione dati |
 | [0009](docs/adr/0009-map-renderer.md) | MapLibre separato dai servizi cartografici |
 | [0010](docs/adr/0010-pwa-twa.md) | PWA prima, TWA dopo |
+| [0011](docs/adr/0011-service-shortlist.md) | Shortlist servizi e blocchi prima dell'integrazione |
 
 ## Consultazione e avvio
 
@@ -54,7 +57,9 @@ le condizioni dei provider e i requisiti correnti di Google Play.
 
 Un passo alla volta. Prima: obiettivo, piano breve e domande aperte. Dopo:
 risultato, avvio o consultazione, checklist manuale, test eseguiti, rischi, ADR e
-commit. Poi fermarsi in attesa di OK. Nessun push e nessun pagamento automatico.
+commit. Proseguire senza attendere OK, come autorizzato dall'utente il 2026-10-26.
+Riaprire le decisioni se richiedono di cambiare vincoli espliciti.
+Nessun push e nessun pagamento automatico.
 
 Il repository remoto indicato dall'utente e'
 <https://github.com/lombardiandrea91-lgtm/PurrRoute.git>.

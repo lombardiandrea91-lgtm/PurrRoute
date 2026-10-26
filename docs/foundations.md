@@ -110,4 +110,6 @@ Nessuna promessa di zero retention senza verifica delle condizioni effettive.
 
 I contratti per local-first precedono la sync completa; autenticazione e permessi
 server non possono attendere il passo collaborazione. Ogni passo termina con
-verifica e richiesta di OK. Il confronto servizi del passo 1 non e' iniziato.
+verifica e resoconto. Dal 2026-10-26 l'utente autorizza il proseguimento senza OK
+intermedi, senza deroghe agli altri vincoli. Il confronto servizi e' documentato
+nella [ricerca del passo 1](service-selection.md).
