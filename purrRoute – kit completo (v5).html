@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>purrRoute – kit completo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#F5F3EF;--card:#fff;--chip:#EEF1F4;--tx:#14202B;--muted:#6B7683;--ic:#14202B;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E151C;--card:#17212B;--chip:#233140;--tx:#EEF3F7;--muted:#92A1AF;--ic:#EEF3F7}}
+:root[data-theme="dark"]{--bg:#0E151C;--card:#17212B;--chip:#233140;--tx:#EEF3F7;--muted:#92A1AF;--ic:#EEF3F7}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:400 16px/1.5 "Plus Jakarta Sans",system-ui,sans-serif}
+main{max-width:780px;margin:0 auto;padding:28px 18px 56px}
+h1{font-size:2.1rem;font-weight:800;margin:0 0 4px;letter-spacing:-.03em}
+h2{font-size:1.1rem;font-weight:800;margin:40px 0 4px}
+p{margin:0 0 14px;color:var(--muted);max-width:58ch}
+.hero{display:flex;gap:18px;align-items:center}
+.hero svg{flex:none;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))}
+.pick{display:flex;gap:10px;flex-wrap:wrap}
+.pick button{font:inherit;color:var(--tx);background:var(--card);border:2px solid transparent;border-radius:20px;padding:12px 18px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 6px 18px rgba(20,32,43,.06)}
+.pick button[aria-pressed="true"]{border-color:#12B5A3}
+.pick svg{height:70px;width:auto}
+.pick span{font-weight:600;font-size:.88rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+.g2{grid-template-columns:repeat(auto-fill,minmax(136px,1fr))}
+figure{margin:0;background:var(--card);border-radius:20px;padding:16px 6px 12px;text-align:center;box-shadow:0 1px 2px rgba(20,32,43,.06),0 6px 18px rgba(20,32,43,.05)}
+figure svg{height:72px;width:auto;max-width:100%;display:block;margin:0 auto 8px}
+figcaption{font-size:.82rem;font-weight:600;line-height:1.25}
+figcaption small{display:block;color:var(--muted);font-weight:400;font-size:.73rem}
+.ui svg{height:50px;width:50px;padding:11px;background:var(--chip);border-radius:16px;color:var(--ic);fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin:4px auto 12px}
+.box{background:var(--card);border-radius:20px;padding:14px;overflow-x:auto;box-shadow:0 6px 18px rgba(20,32,43,.05)}
+.box svg{display:block;width:100%;min-width:320px;height:auto}
+.sizes{display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap;background:var(--card);border-radius:20px;padding:18px}
+.sizes svg{display:block}
+.tag{font-size:.75rem;color:var(--muted);margin-top:6px;text-align:center}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="hl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".7" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<linearGradient id="gbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26394E"/><stop offset="1" stop-color="#0D1822"/></linearGradient>
+<linearGradient id="gro" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#12B5A3"/><stop offset="1" stop-color="#FFB067"/></linearGradient>
+<path id="epp" d="M24 53C24 53 8 38 8 25V8l9 6q7-2 14 0l9-6v17C40 38 24 53 24 53Z"/>
+<g id="ep"><ellipse cx="24" cy="57.5" rx="9" ry="2" fill="#000" opacity=".16"/><use href="#epp" fill="currentColor" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><use href="#epp" fill="url(#hl)"/></g>
+<g id="paw" fill="currentColor"><path d="M12 21c-3.2 0-5.2-2-5.2-4.2 0-2.4 2.6-5.3 5.2-5.3s5.2 2.9 5.2 5.3c0 2.2-2 4.2-5.2 4.2z"/><circle cx="5" cy="11" r="2"/><circle cx="9.2" cy="6.5" r="2"/><circle cx="14.8" cy="6.5" r="2"/><circle cx="19" cy="11" r="2"/></g>
+</defs></svg>
+
+<main>
+<div class="hero"><span id="hero"></span>
+<div><h1>purrRoute</h1><p style="margin:0">Kit completo di pin e icone. Scegli il gatto: i pin sono gli stessi, cambia chi li abita.</p></div></div>
+
+<h2>Scegli il tuo gatto</h2>
+<div class="pick" id="pick"></div>
+
+<h2>Pin del gatto</h2>
+<p>Quattro stati per ogni gatto. A sinistra il rosso, a destra la cipria; quello scelto resta in evidenza.</p>
+<div class="grid g2" id="states"></div>
+<div class="grid" id="special" style="margin-top:10px"></div>
+
+<h2>Pin per categoria</h2>
+<p>Quindici categorie, stessa sagoma con orecchie e simbolo bianco in linea sottile.</p>
+<div class="grid" id="cats"></div>
+
+<h2>Il percorso</h2>
+<div class="box" id="route"></div>
+
+<h2>Icona app e favicon</h2>
+<div class="sizes" id="sizes"></div>
+
+<h2>Icone interfaccia</h2>
+<p>Ventiquattro icone per navigazione, viaggio e azioni.</p>
+<div class="grid ui" id="ui"></div>
+</main>
+
+<script>
+const INK='#14202B';
+const CATS={rosso:{n:'Gatto rosso',b:'#FF9A4D',e:'#FFD3B3',s:'#D9631E'},cipria:{n:'Gatta cipria',b:'#FFE0CE',e:'#F7B9A6'}};
+let cat='rosso';
+const nose='<path d="M21.5 31.5h5q.5 1.5-2.5 3-3-1.5-2.5-3z" fill="#F2706A"/>';
+const dot=(x,y)=>`<circle cx="${x}" cy="${y}" r="2.4" fill="${INK}"/>`;
+const sleep=(x,y)=>`<path transform="translate(${x} ${y})" d="M-3 0Q0 3 3 0" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/>`;
+const heart=(x,y)=>`<path transform="translate(${x} ${y})" d="M0 3C-4.5-.5-3.5-4.5 0-2 3.5-4.5 4.5-.5 0 3Z" fill="#F2545B"/>`;
+function face(c,m){m=m||'n';const k=CATS[c],f={n:dot,v:dot,z:sleep,h:heart}[m];
+ const eyes=c==='rosso'?f(31,26):f(17,26)+f(31,26);
+ const st=c==='rosso'?`<path d="M17 17v4M21 16.5v4.5M25 17v4" stroke="${k.s}" stroke-width="1.8" stroke-linecap="round" opacity=".7"/>`:'';
+ const bd=m==='v'?'<circle cx="39" cy="46" r="7.5" fill="#3DBE7A" stroke="#fff" stroke-width="2"/><path d="M35.5 46l2.5 2.5 4-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>':'';
+ return `<g style="color:${k.b}"><use href="#ep"/></g><path d="M11 12l4 3-4 4zM37 12l-4 3 4 4z" fill="${k.e}"/>${st}${eyes}${nose}${bd}`}
+function head(c,x,y,w,h){const k=CATS[c];return `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="-3 -3 106 90" overflow="visible"><path d="M8 10L28 24Q50 18 72 24L92 10C96 30 94 50 88 62C80 77 64 83 50 83C36 83 20 77 12 62C6 50 4 30 8 10Z" fill="${k.b}" stroke="${k.b}" stroke-width="5" stroke-linejoin="round"/><path d="M14 19l10 7-9 8zM86 19l-10 7 9 8z" fill="${k.e}"/>${c==='rosso'?`<path d="M32 30v9M40 29v10M48 30v9" stroke="${k.s}" stroke-width="3" stroke-linecap="round" opacity=".7"/><circle cx="68" cy="50" r="5.5" fill="${INK}"/>`:`<circle cx="34" cy="50" r="5.5" fill="${INK}"/><circle cx="66" cy="50" r="5.5" fill="${INK}"/>`}<path d="M43 62h14q1 4-7 8-8-4-7-8z" fill="#F2706A"/></svg>`}
+const spark=(x,y,s)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M0-12Q3-3 12 0 3 3 0 12-3 3-12 0-3-3 0-12Z" fill="#7FE3D5"/>`;
+const appIcon=(c,s)=>`<svg width="${s}" height="${s}" viewBox="0 0 120 120"><rect width="120" height="120" rx="30" fill="url(#gbg)"/>${head(c,22,20,76,66)}<path d="M20 98Q56 112 92 96" fill="none" stroke="url(#gro)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="0 9"/><circle cx="100" cy="91" r="5" fill="#FFB067"/>${spark(100,24,1)}</svg>`;
+const favIcon=(c,s)=>`<svg width="${s}" height="${s}" viewBox="0 0 120 120"><rect width="120" height="120" rx="30" fill="url(#gbg)"/>${head(c,14,24,92,80)}</svg>`;
+const logoBoth=s=>`<svg width="${s}" height="${s}" viewBox="0 0 120 120"><rect width="120" height="120" rx="30" fill="url(#gbg)"/>${head('rosso',12,24,60,52)}${head('cipria',48,22,60,52)}<path d="M20 98Q56 112 92 96" fill="none" stroke="url(#gro)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="0 9"/>${spark(100,24,1)}</svg>`;
+const pin=i=>`<svg viewBox="0 0 48 60">${i}</svg>`;
+const fig=(s,t,sub)=>`<figure>${s}<figcaption>${t}${sub?`<small>${sub}</small>`:''}</figcaption></figure>`;
+const two=(m)=>`<svg viewBox="0 0 100 60" style="height:64px">${['rosso','cipria'].map((c,i)=>`<g transform="translate(${i*52} 0)" opacity="${c===cat?1:.3}">${face(c,m)}</g>`).join('')}</svg>`;
+
+const GL={
+partenza:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="#fff"/>',
+destinazione:'<path d="M6 21V4M6 5h12l-3 4 3 4H6"/>',
+tappa:'<use href="#paw"/>',
+alloggio:'<path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/>',
+ristorante:'<path d="M6 3v6a2 2 0 0 0 4 0V3M8 11v10M17 21V3c-2.5 1.5-3.5 4-3.5 7H17"/>',
+caffe:'<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 10h2a2.500 2.500 0 0 1 0 5h-2M8 3v2M12 3v2"/>',
+attrazione:'<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-3h5L16 7"/>',
+museo:'<path d="M3 10l9-6 9 6zM5 10v8M9.500 10v8M14.500 10v8M19 10v8M3 20h18"/>',
+treno:'<rect x="6" y="3" width="12" height="14" rx="3"/><path d="M6 11h12M8 21l2-4M16 21l-2-4"/>',
+volo:'<path d="M21 15.500l-8-4.500V5.500a1.500 1.500 0 0 0-3 0V11l-8 4.500V18l8-2.500V19l-2.500 1.500V22l4-1 4 1v-1.500L13 19v-3.500l8 2.500z"/>',
+auto:'<path d="M4 16v-4l2-5h12l2 5v4zM4 16v3M20 16v3M7 12h10"/>',
+natura:'<path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15M5 19l8-8"/>',
+spiaggia:'<path d="M12 5a7 7 0 0 1 7 7H5a7 7 0 0 1 7-7zM12 12v8M9 20h6"/>',
+shopping:'<path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2"/>'};
+const PINS=[['Partenza','#5B6CFF','partenza'],['Destinazione','#F2545B','destinazione'],['Zampata','#12B5A3','tappa'],['Alloggio','#9B6DFF','alloggio'],['Ristorante','#FFB020','ristorante'],['Caffè','#B8794A','caffe'],['Attrazione','#F0589B','attrazione'],['Museo','#E8772E','museo'],['Treno','#2D9CDB','treno'],['Volo','#00A3C4','volo'],['Auto','#6B7A8F','auto'],['Natura','#3DBE7A','natura'],['Spiaggia','#FFCC33','spiaggia'],['Shopping','#C2417A','shopping']];
+const A='fill="#FFB067" stroke="none"';
+const UI=[['Esplora','<circle cx="12" cy="12" r="9"/><path d="M15.500 8.500l-2 5-5 2 2-5z"/>'],['Cerca','<circle cx="11" cy="11" r="6.500"/><path d="M16 16l4.500 4.500"/>'],['Mappa','<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/>'],['Viaggi','<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M8.500 8V4.500L11 6.500h2l2.500-2V8"/>'],['Itinerario',`<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2" ${A}/><path d="M6 16c0-6 12-2 12-8" stroke-dasharray="0.1 3.600"/>`],['Date',`<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M8 3v4M16 3v4"/><circle cx="12" cy="15" r="2" ${A}/>`],['Budget','<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.500" fill="#12B5A3" stroke="none"/>'],['Lista','<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 9l1.500 1.500L14 7M9 15h6"/>'],['Biglietti','<path d="M4 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 8v8" stroke-dasharray="2 2"/>'],['Documenti','<rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M9 16h6"/>'],['Meteo',`<circle cx="12" cy="12" r="4" ${A}/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.600 5.600L7 7M17 17l1.400 1.400M5.600 18.400L7 17M17 7l1.400-1.400"/>`],['Note','<path d="M5 4h10l4 4v12H5zM9 12h6M9 16h4"/>'],['Foto','<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.500"/><path d="M3 17l5-4 4 3 3-2 6 4"/>'],['Amici','<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.500 2.500-6 6-6s6 2.500 6 6"/><circle cx="17" cy="9" r="2.500"/><path d="M17 14c2.500 0 4 2 4 4.500"/>'],['Condividi','<circle cx="6" cy="12" r="2.500"/><circle cx="18" cy="6" r="2.500"/><circle cx="18" cy="18" r="2.500"/><path d="M8.200 10.800l7.600-3.600M8.200 13.200l7.600 3.600"/>'],['Offline','<path d="M12 4v10M8 10l4 4 4-4M5 19h14"/>'],['Preferiti','<path d="M12 20s-8-5-8-11a4.500 4.500 0 0 1 8-2.500A4.500 4.500 0 0 1 20 9c0 6-8 11-8 11z"/>'],['Notifiche','<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>'],['Impostazioni',`<path d="M4 8h10M18 8h2M4 16h2M10 16h10"/><circle cx="16" cy="8" r="2" ${A}/><circle cx="8" cy="16" r="2" ${A}/>`],['Profilo','<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.500 3.500-7 8-7s8 2.500 8 7"/>'],['Aggiungi','<path d="M12 5v14M5 12h14"/>'],['Filtri','<path d="M4 6h16l-6 7v6l-4-2v-4z"/>'],['Posizione','<circle cx="12" cy="12" r="3.500"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'],['Orario','<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>']];
+
+function render(){
+ const c=cat,k=CATS[c];
+ document.getElementById('hero').innerHTML=appIcon(c,88);
+ document.getElementById('pick').innerHTML=Object.keys(CATS).map(x=>`<button data-c="${x}" aria-pressed="${x===c}"><svg viewBox="0 0 48 60">${face(x)}</svg><span>${CATS[x].n}</span></button>`).join('');
+ document.getElementById('states').innerHTML=fig(two('n'),'Tappa','da non perdere')+fig(two('z'),'Opzionale','se c’è tempo')+fig(two('h'),'Preferito','cuori negli occhi')+fig(two('v'),'Visitato','già fatta');
+ document.getElementById('special').innerHTML=fig(`<svg viewBox="0 0 64 64"><circle cx="32" cy="50" r="22" fill="#12B5A3" opacity=".14"/><circle cx="32" cy="50" r="13" fill="#12B5A3" opacity=".22"/><g transform="translate(14 0) scale(.78)">${face(c)}</g></svg>`,'Sei qui','posizione attuale')
+ +fig(`<svg viewBox="0 0 80 64"><g transform="translate(0 6) scale(.8)">${face(c)}</g><g transform="translate(30 6) scale(.8)">${face(c,'z')}</g><circle cx="66" cy="14" r="11" fill="${INK}"/><text x="66" y="19" text-anchor="middle" font-size="14" font-weight="800" fill="#fff" font-family="Plus Jakarta Sans,system-ui,sans-serif">5</text></svg>`,'Gruppo','più tappe vicine')
+ +fig(appIcon(c,72),'App','icona singola')
+ +fig(logoBoth(72),'Logo','i due gatti');
+ document.getElementById('route').innerHTML=`<svg viewBox="0 0 360 120" role="img" aria-label="Percorso"><path d="M34 92C90 112 140 52 200 78S290 90 306 64" fill="none" stroke="url(#gro)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 11"/><circle cx="24" cy="90" r="9" fill="#5B6CFF"/><circle cx="24" cy="90" r="3.5" fill="#fff"/><circle cx="200" cy="78" r="8" fill="#fff" stroke="#FFB067" stroke-width="4"/>${spark(246,36,1)}<g transform="translate(294 2) scale(.9)">${face(c)}</g></svg>`;
+ document.getElementById('sizes').innerHTML=`<div>${appIcon(c,120)}<div class="tag">512 px</div></div><div>${appIcon(c,64)}<div class="tag">192 px</div></div><div>${favIcon(c,48)}<div class="tag">48 px</div></div><div>${favIcon(c,32)}<div class="tag">favicon</div></div><div>${favIcon(c,20)}<div class="tag">20 px</div></div>`;
+}
+document.getElementById('cats').innerHTML=PINS.map(([n,col,g])=>fig(pin(`<g style="color:${col}"><use href="#ep"/></g><g transform="translate(13 14) scale(.9)" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#fff">${GL[g]}</g>`),n)).join('');
+document.getElementById('ui').innerHTML=UI.map(([n,s])=>fig(`<svg viewBox="0 0 24 24">${s}</svg>`,n)).join('');
+document.getElementById('pick').addEventListener('click',e=>{const b=e.target.closest('button');if(b){cat=b.dataset.c;render()}});
+render();
+</script>
+</body>
+</html>

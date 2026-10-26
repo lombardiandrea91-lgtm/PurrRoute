@@ -1,0 +1,42 @@
+{
+  "projectType": "library",
+  "setup": [{ "command": "npm", "args": ["ci"] }],
+  "assertions": [
+    {
+      "name": "design-assets-generate",
+      "kind": "process",
+      "command": "npm",
+      "args": ["run", "assets"],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 120
+    },
+    {
+      "name": "tsc-no-emit",
+      "kind": "process",
+      "command": "npm",
+      "args": ["run", "check"],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 120
+    },
+    {
+      "name": "tests-pass",
+      "kind": "process",
+      "command": "npm",
+      "args": ["test"],
+      "verificationMethod": "test-results",
+      "expected": "0",
+      "timeoutSeconds": 120
+    },
+    {
+      "name": "design-preview-browser",
+      "kind": "process",
+      "command": "npm",
+      "args": ["run", "test:design"],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 120
+    }
+  ]
+}

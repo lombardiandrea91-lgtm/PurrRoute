@@ -1,0 +1,63 @@
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('./fonts/PlusJakartaSans.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #F5F3EF;
+  --surface: #FFFFFF;
+  --chip: #EEF1F4;
+  --text: #14202B;
+  --kit-muted: #6B7683;
+  --secondary: #596674;
+  --action: #076A61;
+  --teal: #12B5A3;
+  --orange: #FFB067;
+  --border: #D7DDDF;
+  --radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #0E151C;
+    --surface: #17212B;
+    --chip: #233140;
+    --text: #EEF3F7;
+    --kit-muted: #92A1AF;
+    --secondary: #A7B4C1;
+    --action: #12B5A3;
+    --border: #52616E;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0E151C;
+  --surface: #17212B;
+  --chip: #233140;
+  --text: #EEF3F7;
+  --kit-muted: #92A1AF;
+  --secondary: #A7B4C1;
+  --action: #12B5A3;
+  --border: #52616E;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+button, input, select { font: inherit; }
+button, label { -webkit-tap-highlight-color: transparent; }
+button, a, input { touch-action: manipulation; }
+:focus-visible { outline: 3px solid var(--action); outline-offset: 4px; }
+button { cursor: pointer; }
+a { color: var(--action); }
+svg { display: block; flex: none; max-width: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

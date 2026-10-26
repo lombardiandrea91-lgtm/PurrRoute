@@ -6,14 +6,16 @@ Codice proprietario. App pubblica gratuita, inizialmente per circa 10 utenti att
 
 ## Stato
 
-Passi 0 e 1 completati; ricerca servizi con raccomandazioni condizionate.
-Nessuna applicazione, dipendenza o integrazione installata.
+Passi 0, 1 e 2 completati; ricerca servizi con raccomandazioni condizionate.
+Design system tipizzato e asset generati; nessuna integrazione remota attivata.
 Dal 2026-10-26 l'utente autorizza a procedere senza approvazioni intermedie,
 preservando ordine dei passi, budget e vincoli.
 
 - [Fondamenta e questioni aperte](docs/foundations.md)
 - [Struttura del repository](docs/repository-structure.md)
 - [Ricerca servizi esterni](docs/service-selection.md)
+- [Design system e verifiche](docs/design-system.md)
+- [Anteprima componenti](packages/design-system/preview.html)
 
 ## Decisioni architetturali
 
@@ -30,11 +32,23 @@ preservando ordine dei passi, budget e vincoli.
 | [0009](docs/adr/0009-map-renderer.md) | MapLibre separato dai servizi cartografici |
 | [0010](docs/adr/0010-pwa-twa.md) | PWA prima, TWA dopo |
 | [0011](docs/adr/0011-service-shortlist.md) | Shortlist servizi e blocchi prima dell'integrazione |
+| [0012](docs/adr/0012-design-tooling.md) | Estrazione kit, font locale e strumenti design |
 
 ## Consultazione e avvio
 
-Aprire questo documento in anteprima Markdown di VS Code. Non esistono ancora
-comandi di avvio, build o test dell'app: non eseguire installazioni per il passo 0.
+Aprire l'anteprima componenti direttamente nel browser, senza server.
+Per rigenerare e verificare il design system:
+
+```powershell
+npm ci
+npm run assets
+npm run check
+npm test
+npm run test:design
+```
+
+La verifica browser usa Microsoft Edge installato; `PLAYWRIGHT_CHANNEL` permette
+di selezionare un altro canale disponibile. Non esiste ancora una shell app.
 Il [kit HTML](purrRoute%20%E2%80%93%20kit%20completo%20%28v5%29.html)
 si apre direttamente nel browser, senza server; carica il font da Google Fonts.
 Il [kit Markdown](purrRoute%20%E2%80%93%20kit%20completo%20%28v5%29.md)
@@ -49,8 +63,8 @@ I due originali sono preservati, compreso il refuso sul numero delle categorie.
 - Aprire i dieci ADR e controllare motivazioni, alternative, conseguenze e fonti.
 - Verificare che non siano stati aggiunti codice applicativo o servizi esterni.
 
-I controlli automatici di questo passo riguardano documenti e collegamenti locali,
-non comportamento applicativo. Restano aperte la fattibilita' del costo zero,
+Il passo 2 aggiunge test di SVG, PNG, font, contrasto e anteprima responsive.
+Restano aperte la fattibilita' del costo zero,
 le condizioni dei provider e i requisiti correnti di Google Play.
 
 ## Protocollo

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>purrRoute | Design system</title>
+  <link rel="icon" href="assets/favicon-rosso.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    main { max-width: 1152px; margin: auto; padding: 32px 24px 64px; }
+    header { display: flex; align-items: center; gap: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+    header > svg { width: 72px; height: 72px; }
+    h1 { font-size: 30px; margin: 0; font-weight: 800; }
+    h2 { margin: 0 0 20px; font-size: 20px; }
+    p { margin: 4px 0 0; color: var(--secondary); font-size: 14px; }
+    section { padding: 32px 0; border-bottom: 1px solid var(--border); }
+    .toolbar { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+    fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+    legend { font-size: 12px; color: var(--secondary); margin-bottom: 8px; }
+    .choice { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 8px 12px; gap: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); cursor: pointer; }
+    .choice:has(input:checked) { border-color: var(--action); box-shadow: inset 0 -3px var(--action); }
+    .choice input { accent-color: var(--action); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(116px, 1fr)); gap: 12px; }
+    .states { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    figure { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 8px; display: grid; justify-items: center; align-content: start; gap: 12px; min-width: 0; }
+    figure > svg { height: 68px; width: 68px; }
+    figcaption { font-size: 13px; text-align: center; overflow-wrap: anywhere; }
+    .ui-grid figure > svg { width: 28px; height: 28px; margin: 12px 0; }
+    .palette { display: flex; gap: 24px; flex-wrap: wrap; }
+    .swatch { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .swatch i { width: 32px; height: 32px; border: 1px solid var(--border); background: var(--swatch); border-radius: 50%; }
+    .route { width: 100%; max-width: 650px; height: auto; }
+    .asset-grid { grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); }
+    .asset-grid img { width: 96px; height: 96px; object-fit: contain; }
+    .asset-grid a { font-size: 12px; padding: 8px; }
+    .mono { background: #FFFFFF; border-radius: 6px; }
+    .cat-controls { margin-top: 20px; }
+    @media (max-width: 600px) {
+      main { padding: 20px 16px 48px; }
+      header { flex-wrap: wrap; gap: 12px; }
+      header > svg { width: 56px; height: 56px; }
+      h1 { font-size: 26px; }
+      .toolbar { width: 100%; margin-left: 0; }
+      .states { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>%%LOGO%%<div><h1>purrRoute</h1><p>Design system / v5</p></div>
+      <div class="toolbar"><fieldset><legend>Tema</legend>
+        <label class="choice"><input type="radio" name="theme" value="system" checked>Sistema</label>
+        <label class="choice"><input type="radio" name="theme" value="light">Chiaro</label>
+        <label class="choice"><input type="radio" name="theme" value="dark">Scuro</label>
+      </fieldset></div>
+    </header>
+    <section><h2>Palette</h2><div class="palette">%%PALETTE%%</div></section>
+    <section><h2>I gatti</h2><div class="grid states">%%STATES%%</div></section>
+    <section><h2>14 categorie</h2><div class="grid">%%CATEGORIES%%</div></section>
+    <section><h2>24 icone</h2><div class="grid ui-grid">%%ICONS%%</div></section>
+    <section><h2>La mappa</h2><div class="grid states">%%SPECIALS%%</div>%%ROUTE%%</section>
+    <section><h2>Asset app</h2>
+      <fieldset class="cat-controls"><legend>Gatto</legend>
+        <label class="choice"><input type="radio" name="cat" value="rosso" checked>Gatto rosso</label>
+        <label class="choice"><input type="radio" name="cat" value="cipria">Gatta cipria</label>
+      </fieldset><div class="grid asset-grid" style="margin-top:20px">%%ASSETS%%</div>
+    </section>
+  </main>
+  <script>
+    document.querySelectorAll('input[name="theme"]').forEach((input) => input.addEventListener('change', () => {
+      if (input.value === 'system') delete document.documentElement.dataset.theme;
+      else document.documentElement.dataset.theme = input.value;
+    }));
+    document.querySelectorAll('input[name="cat"]').forEach((input) => input.addEventListener('change', () => {
+      document.querySelectorAll('[data-asset]').forEach((image) => {
+        image.src = `assets/${image.dataset.asset}-${input.value}.png`;
+        image.alt = `${image.dataset.label}, ${input.value}`;
+      });
+      document.querySelectorAll('[data-download]').forEach((link) => {
+        link.href = `assets/${link.dataset.download}-${input.value}.png`;
+      });
+    }));
+  </script>
+</body>
+</html>

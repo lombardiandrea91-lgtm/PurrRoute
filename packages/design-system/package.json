@@ -1,0 +1,11 @@
+{
+  "name": "@purrroute/design-system",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./styles.css"
+  }
+}

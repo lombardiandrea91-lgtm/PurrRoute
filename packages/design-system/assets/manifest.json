@@ -1,0 +1,58 @@
+{
+  "source": "purrRoute – kit completo (v5).html",
+  "sourceSha256": "3e59ff4b0c53a0dc40cad8a01d42f6f2f8088a2a256c02ccc8869db59b27e9bf",
+  "fontRevision": "8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5",
+  "fontSha256": "89b3fb38aa0d275d7a731d0d817a4f1622b316b4d7fbdedcf02ee9099ff68bc8",
+  "assets": [
+    {
+      "filename": "app-192-rosso.png",
+      "size": 192,
+      "purpose": "any"
+    },
+    {
+      "filename": "app-512-rosso.png",
+      "size": 512,
+      "purpose": "any"
+    },
+    {
+      "filename": "maskable-rosso.png",
+      "size": 512,
+      "purpose": "maskable"
+    },
+    {
+      "filename": "favicon-rosso.png",
+      "size": 48,
+      "purpose": "favicon"
+    },
+    {
+      "filename": "monochrome-rosso.png",
+      "size": 512,
+      "purpose": "monochrome"
+    },
+    {
+      "filename": "app-192-cipria.png",
+      "size": 192,
+      "purpose": "any"
+    },
+    {
+      "filename": "app-512-cipria.png",
+      "size": 512,
+      "purpose": "any"
+    },
+    {
+      "filename": "maskable-cipria.png",
+      "size": 512,
+      "purpose": "maskable"
+    },
+    {
+      "filename": "favicon-cipria.png",
+      "size": 48,
+      "purpose": "favicon"
+    },
+    {
+      "filename": "monochrome-cipria.png",
+      "size": 512,
+      "purpose": "monochrome"
+    }
+  ]
+}
