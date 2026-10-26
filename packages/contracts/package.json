@@ -1,0 +1,14 @@
+{
+  "name": "@purrroute/contracts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "UNLICENSED",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@purrroute/domain": "0.0.0",
+    "typebox": "1.4.3"
+  }
+}

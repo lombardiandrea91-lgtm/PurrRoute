@@ -1,6 +1,7 @@
 # ADR-0003: PostgreSQL e IndexedDB local-first
 
-Stato: accettato come direzione; schema e sync da progettare. Data: 2026-10-26.
+Stato: accettato; primo schema nel passo 4, sync ancora da progettare.
+Data: 2026-10-26.
 
 ## Contesto e decisione
 
@@ -16,12 +17,13 @@ Fonti ufficiali consultate il 2026-10-26.
 | Progetto | Licenza dichiarata | Evidenza e limiti |
 | --- | --- | --- |
 | [PostgreSQL](https://www.postgresql.org/about/licence/) | PostgreSQL License | Pagina ufficiale con attivita' di release nell'ottobre 2026; supporto della versione scelta: non verificato |
-| [Dexie core](https://github.com/dexie/Dexie.js) | Apache-2.0 | Commit e release recenti; addon observable/syncable dichiarati legacy e non mantenuti |
+| [Dexie core](https://github.com/dexie/Dexie.js) | 4.4.7, Apache-2.0 | Release nell'ottobre 2026; addon observable/syncable legacy non adottati |
 
 Conservare gli avvisi di licenza e NOTICE applicabili. Dexie core non implica
-adozione di servizi cloud o addon. Driver PostgreSQL e librerie di migrazione:
-non verificato, da selezionare separatamente. IndexedDB e' un'API browser, non
-un servizio esterno ne' una garanzia di persistenza illimitata.
+adozione di servizi cloud o addon. Driver `pg` e `node-pg-migrate` sono selezionati
+e verificati in ADR-0015; il loro funzionamento contro un server PostgreSQL reale
+resta da provare. IndexedDB e' un'API browser, non un servizio esterno ne' una
+garanzia di persistenza illimitata.
 
 ## Alternative e conseguenze
 

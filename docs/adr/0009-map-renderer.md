@@ -1,6 +1,7 @@
 # ADR-0009: MapLibre separato dai servizi cartografici
 
-Stato: accettato il renderer; dati e provider da selezionare. Data: 2026-10-26.
+Stato: MapLibre/OpenFreeMap online adottati al passo 6; geocoding/routing opt-in
+e condizioni privacy ancora aperte in ADR-0017. Data: 2026-10-26.
 
 ## Contesto e decisione
 
@@ -11,9 +12,9 @@ condizioni proprie. Pin, stati e percorso visivo derivano dal kit purrRoute.
 ## Verifica licenza e manutenzione
 
 [Repository ufficiale MapLibre GL JS](https://github.com/maplibre/maplibre-gl-js),
-consultato il 2026-10-26: licenza BSD-3-Clause dichiarata, commit e release recenti.
-Conservare avvisi e attribuzioni richiesti. Versione, compatibilita' browser/GPU e
-licenze transitive: non verificato, da controllare prima dell'installazione.
+consultato il 2026-10-26: versione 6.16.0, licenza BSD-3-Clause, release recente
+e API documentata per Vite/GeoJSON. Conservare avvisi e attribuzioni. Compatibilità
+browser/GPU e licenze transitive effettive: da verificare sui browser target.
 
 ## Alternative e conseguenze
 
@@ -22,11 +23,13 @@ cartografica generica, non un pianificatore viaggi riutilizzato.
 La sua licenza non concede diritti sui dati o download dei tile. Non usare
 demotiles o tile pubblici come infrastruttura di produzione per semplice comodita'.
 
-Attribuzione, cache, proxy server, download offline e riuso dei luoghi richiedono
-verifica per ogni provider al passo 1. Queste condizioni sono non verificato.
-Con il vincolo segreti solo server, verificare la fattibilita' del percorso dei
-tile senza esporre API key o violare termini; altrimenti respingere il candidato.
+OpenFreeMap è il tile provider online documentato in ADR-0017. La sua istanza
+pubblica è senza chiave, ma non ha SLA e non garantisce regione UE. Nessun tile è
+precache/service-worker-cached. Geocoding e routing usano route server-only opzionali;
+non mettere chiavi o query provider nel client. LocationIQ richiede revisione DPA,
+informativa e opt-in esplicito prima del rilascio.
 
-Download mappe al passo 7 solo se consentito e sostenibile per quote e storage.
-In assenza di servizi, mostrare itinerario e coordinate disponibili senza
-inventare percorsi o promettere mappe offline non scaricate.
+Download mappe al passo 7 solo nei limiti ToS: l'istanza OpenFreeMap indica massimo
+3.000 tile o 50 MB per download, 4 richieste parallele e User-Agent univoco.
+In assenza di routing, mostrare un collegamento schematico dichiarato non stradale,
+senza inventare percorsi, distanze o tempi.

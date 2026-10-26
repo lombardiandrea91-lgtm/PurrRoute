@@ -1,13 +1,15 @@
 # Struttura del repository
 
-Stato: struttura approvata come direzione, non scaffolding esistente.
-Nel passo 0 vengono creati solo README e documenti. I due kit restano nella root.
-Non creare cartelle vuote, configurazioni speculative o dipendenze anticipate.
+Stato: scaffolding incrementale. Passo 4: dominio, contratti, API, repository e
+migrazioni presenti; server PostgreSQL/email produzione restano da verificare.
+Passo 5: core viaggi locale Dexie. Passo 6: MapLibre, OpenFreeMap e adapter API
+geospaziali presenti; LocationIQ resta opt-in, ORS non selezionato. I due kit
+restano nella root; i passi successivi si aggiungono quando partono.
 
 ```text
 apps/
   web/                    # Client React/Vite, i18n IT/EN, PWA, storage locale
-  api/                    # API, sessioni, permessi e adapter provider
+  api/                    # API, sessioni, permessi e adapter provider (passo 4)
 packages/
   domain/                 # Tipi e regole pure del viaggio
   contracts/              # Contratti API, validazione runtime ed errori
@@ -50,7 +52,6 @@ backend e schema; al passo 5 il nucleo locale; al passo 7 la sync completa.
 IDs stabili, revisioni, cancellazioni e idempotenza vanno considerati prima della
 sync, senza implementare prematuramente la politica dei conflitti.
 
-Le librerie per routing, traduzioni, auth, driver DB, PWA e test non sono scelte
-implicitamente: prima dell'adozione verificare licenza, manutenzione e compatibilita'
-e aggiornare un ADR. I file ambiente server non entrano nel repository; eventuali
-esempi conterranno soltanto nomi e valori fittizi, mai segreti reali.
+Le versioni backend sono registrate in ADR-0015; le scelte degli altri moduli
+restano nei rispettivi ADR. I file ambiente server non entrano nel repository;
+gli esempi contengono soltanto credenziali locali fittizie, mai segreti reali.

@@ -1,7 +1,8 @@
 # Shell PWA
 
 Passo 3 implementato il 2026-10-26. Gate locali passati; installazione Android
-reale e pubblicazione HTTPS non verificate. Non e' ancora l'MVP del passo 6.
+reale e pubblicazione HTTPS non verificate. Il passo 6 rende l'MVP utilizzabile con
+tile online; queste verifiche PWA esterne restano separate.
 
 ## Come avviarla
 
@@ -40,11 +41,15 @@ copie e la directory dist non vanno modificate manualmente.
 - Nessun tile, API o documento in cache runtime. `/api` e `/api/*` sono esclusi
   dal fallback del service worker; la preview Vite non e' un server API.
 
-La mappa mostra indisponibilita', non una mappa o percorso simulati. Non ci sono
-viaggi, account o modifiche sincronizzate: il contatore e' realmente zero. Queste
-funzioni appartengono ai passi successivi e non sono rappresentate da pulsanti
-che fingono di funzionare. La scelta grafica del gatto non cambia la categoria
-dei futuri dati viaggio o la decisione ancora aperta sugli stati.
+La route `/map` ora usa MapLibre con tile online OpenFreeMap, pin SVG delle 14
+categorie, cluster, selezione lista↔mappa e inserimento manuale di coordinate.
+Il click Posizione richiede permesso soltanto su gesto utente. Il percorso stradale
+è un'azione esplicita; se il provider non è configurato resta il collegamento
+tratteggiato dichiarato schematico, senza distanza o tempi inventati. Geocoding e
+routing LocationIQ sono disattivati per default e richiedono opt-in server.
+Tile/style/glyph e dati viaggio non entrano nella cache service worker. L'archivio
+IndexedDB resta usabile senza i servizi remoti; le mappe offline sono rinviate al
+passo 7 e devono rispettare i limiti del tile provider.
 
 ## Verifiche eseguite
 
@@ -74,7 +79,8 @@ browser integrato sono evidenza della sessione, non spec CI riproducibile.
 
 La documentazione Chrome dichiara deprecati gli audit PWA Lighthouse: non
 dichiariamo un badge PWA verde. Lighthouse performance, Core Web Vitals reali e
-Android fisico non eseguiti. Build corrente: circa 610 KiB di precache statico.
+Android fisico non eseguiti. Build corrente dopo MapLibre: circa 2.4 MiB di precache
+statico, inclusi worker e chunk mappa caricati on-demand dalla route.
 Il bundler ha segnalato una dipendenza transitoria glob deprecata durante install;
 npm non ha segnalato vulnerabilita' note, senza garanzia di assenza di rischi.
 

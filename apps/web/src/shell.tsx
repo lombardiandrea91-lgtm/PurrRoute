@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, useSyncExternalStore } from 'react';
+import { Suspense, lazy, useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router';
 import { renderSvg } from '@purrroute/design-system';
 import type { GraphicId } from '@purrroute/design-system';
@@ -7,6 +7,10 @@ import type { MessageKey } from './messages.ts';
 import { loadPreferences, savePreferences, preferencesKey, parsePreferences } from './preferences.ts';
 import type { Preferences } from './preferences.ts';
 import { getPwaState, getNeedsUpdate, subscribePwa, updateApplication } from './pwa.ts';
+import { TripsWorkspace } from './trips.tsx';
+import { LocalTripRepository } from './trips/repository.ts';
+
+const MapWorkspace = lazy(() => import('./maps/map.tsx'));
 
 function Graphic({ id, className = '' }: { id: GraphicId; className?: string }) {
   const instance = `svg-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -25,6 +29,7 @@ function Shell() {
   const [preferences, setPreferences] = useState(loadPreferences);
   const [saveFailed, setSaveFailed] = useState(false);
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
+  const [localTripCount, setLocalTripCount] = useState(0);
   const online = useSyncExternalStore(subscribeNetwork, () => navigator.onLine);
   const pwa = useSyncExternalStore(subscribePwa, getPwaState);
   const needsUpdate = useSyncExternalStore(subscribePwa, getNeedsUpdate);
@@ -43,6 +48,11 @@ function Shell() {
     else document.documentElement.dataset.theme = preferences.theme;
     document.querySelector<HTMLLinkElement>('link[rel="icon"]')?.setAttribute('href', `/app-assets/favicon-${preferences.cat}.png`);
   }, [preferences]);
+
+  useEffect(() => new LocalTripRepository().observeTrips(
+    (trips) => setLocalTripCount(trips.length),
+    () => setLocalTripCount(0),
+  ), []);
 
   useEffect(() => {
     const key = navigation.find((item) => item.path === pathname)?.key;
@@ -83,9 +93,9 @@ function Shell() {
       <main id="content" className="content" tabIndex={-1}>
         <Routes>
           <Route path="/" element={<Navigate to="/trips" replace />} />
-          <Route path="/trips" element={<div className="split-view"><section className="trip-column"><div className="page-heading">{heading(translate('trips'))}<span className="count">0</span></div>{empty(`app-${preferences.cat}`, translate('noTrips'))}</section><section className="detail-column"><h2>{translate('itinerary')}</h2>{empty('ui-itinerario', translate('noSelected'))}</section></div>} />
-          <Route path="/map" element={<section className="page">{heading(translate('map'))}<div className="map-unavailable">{empty('ui-mappa', translate('mapUnavailable'))}</div></section>} />
-          <Route path="/offline" element={<section className="page">{heading(translate('offline'))}<div className="status-row"><Graphic id="ui-offline" /><span>{translate(pwa)}</span></div><div className="section-heading"><h2>{translate('local')}</h2><span>0</span></div><p className="muted">{translate('empty')}</p><div className="section-heading"><h2>{translate('map')}</h2><span>0</span></div><p className="muted">{translate('noDownloads')}</p></section>} />
+          <Route path="/trips" element={<TripsWorkspace locale={preferences.locale} cat={preferences.cat} />} />
+          <Route path="/map" element={<Suspense fallback={<section className="page">{heading(translate('map'))}<p role="status">{translate('mapLoading')}</p></section>}><MapWorkspace locale={preferences.locale} /></Suspense>} />
+          <Route path="/offline" element={<section className="page">{heading(translate('offline'))}<div className="status-row"><Graphic id="ui-offline" /><span>{translate(pwa)}</span></div><div className="section-heading"><h2>{translate('local')}</h2><span>{localTripCount}</span></div><p className="muted">{localTripCount === 0 ? translate('empty') : translate('localTripsSaved')}</p><div className="section-heading"><h2>{translate('map')}</h2><span>0</span></div><p className="muted">{translate('noDownloads')}</p></section>} />
           <Route path="/settings" element={<section className="page settings">{heading(translate('settings'))}
             <fieldset><legend>{translate('language')}</legend><div className="segmented">{(['it', 'en'] as const).map((locale) => <label key={locale}><input type="radio" name="language" value={locale} checked={preferences.locale === locale} onChange={() => change({ locale })} /><span>{locale === 'it' ? 'Italiano' : 'English'}</span></label>)}</div></fieldset>
             <fieldset><legend>{translate('theme')}</legend><div className="segmented">{(['system', 'light', 'dark'] as const).map((theme) => <label key={theme}><input type="radio" name="theme" checked={preferences.theme === theme} onChange={() => change({ theme })} /><span>{translate(theme)}</span></label>)}</div></fieldset>

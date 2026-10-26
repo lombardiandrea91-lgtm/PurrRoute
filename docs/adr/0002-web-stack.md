@@ -1,6 +1,7 @@
 # ADR-0002: Monorepo TypeScript e piattaforma web unica
 
-Stato: accettato come direzione; nessuna dipendenza installata. Data: 2026-10-26.
+Stato: accettato come direzione; adozioni backend fissate in ADR-0015.
+Verifiche e implementazione: 2026-10-26.
 
 ## Contesto
 
@@ -28,9 +29,8 @@ non una garanzia di supporto della versione che installeremo.
 
 Conservare licenze, copyright e NOTICE richiesti. Controllare anche le licenze
 incluse in Node e quelle transitive dei pacchetti effettivamente bloccati.
-Compatibilita' delle versioni, versione npm inclusa e requisiti runtime:
-non verificato. Fissare versioni stabili supportate prima dell'installazione,
-senza adottare automaticamente main, nightly o Node Current.
+Versioni backend e compatibilita' runtime effettivamente verificate sono in
+ADR-0015; runtime e hosting della futura produzione restano da scegliere.
 
 ## Alternative e conseguenze
 
@@ -40,5 +40,6 @@ Microservizi e client nativo separato aumenterebbero il costo di manutenzione.
 Fastify offre validazione JSON Schema e composizione modulare, ma non sostituisce
 il progetto di autenticazione, autorizzazione o gestione degli errori.
 
-Routing, i18n, PWA, test, auth e driver DB saranno verificati prima del loro uso.
-Non sono dipendenze gia' approvate per il solo fatto di appartenere all'ecosistema.
+Routing, i18n, PWA e test sono documentati negli ADR dei rispettivi passi.
+Auth, driver e migrazioni PostgreSQL sono verificati in ADR-0015; nessuna
+dipendenza e' approvata per il solo fatto di appartenere all'ecosistema.

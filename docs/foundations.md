@@ -34,7 +34,8 @@ sostenerne i costi. Eventuali costi richiederanno una decisione separata.
   Alloggio, Ristorante, Caffe', Attrazione, Museo, Treno, Volo, Auto, Natura,
   Spiaggia e Shopping. Non aggiungere una categoria inventata.
 - I quattro stati visivi sono Tappa, Opzionale, Preferito e Visitato; sono presenti
-  Sei qui, Gruppo e il percorso tratteggiato. Non sono ancora un modello dati.
+  Sei qui, Gruppo e il percorso tratteggiato. Il dominio del passo 4 separa
+  pianificazione obbligatoria/opzionale dai marcatori preferito e visitato (ADR-0014).
 - Le anteprime SVG etichettate 192/512 non sono PNG gia' esportati.
 - La cartella, all'avvio di questa esecuzione, conteneva solo i kit e non aveva Git.
 
@@ -66,10 +67,10 @@ Accenti nel kit: teal #12B5A3 e arancio #FFB067. Il contrasto AA non e' attestat
 | Font self-hosted | Verificato al passo 2: OFL 1.1, font originale locale e licenza allegata |
 | Icone UI | Verificato al passo 2: 24 icone con estrazione e test automatici |
 | Accessibilita' | Test contrasto e axe locale passati; verifica completa con tecnologie assistive: non verificato |
-| Versioni dipendenze | Compatibilita', transitive e supporto delle versioni scelte: non verificato; prima dell'installazione |
-| Preferito e visitato | Flag indipendenti o stati: decisione al passo 4 |
+| Versioni dipendenze | Toolchain API diretta verificata in ADR-0015; audit transitive e runtime hosting produzione ancora da completare |
+| Preferito e visitato | Risolto al passo 4: pianificazione required/optional separata da preferito e visitedAt, ADR-0014 |
 | Conflitti sync | Politica da definire al passo 7, prevedendo i contratti fin dai passi 4 e 5 |
-| Email produzione | Provider, dominio mittente, quote e deliverability: non verificato |
+| Email produzione | Provider, dominio mittente, quote e deliverability: non verificato; sink solo locale al passo 4 |
 | Google Play | Costi e requisiti correnti: non verificato; passo 13 |
 | Repository remoto | Visibilita', accesso e contenuti: non verificato; prima di qualsiasi push |
 

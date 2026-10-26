@@ -22,9 +22,9 @@ di copertura sono ipotesi tecniche, non misurazioni.
 
 | Categoria | Raccomandazione | Condizione prima di abilitare |
 | --- | --- | --- |
-| Tile | MapTiler Free per online non commerciale; PMTiles propri per offline futuro | Termini cloud/proxy, regione e uso pubblico da chiudere; nessun download cloud implicito |
+| Tile | OpenFreeMap public instance per tile online; PMTiles propri per offline futuro | Nessun SLA; CDN/regione non garantiti; download soggetti a limiti e termini |
 | Geocoding | LocationIQ Free lato server | Endpoint UE, DPA, dati OSM e cache di ricerca separata dai dati selezionati |
-| Percorsi | openrouteservice come primo candidato | Quote e termini correnti non recuperabili: integrazione bloccata |
+| Percorsi | LocationIQ Directions solo opt-in; altrimenti schema manuale | DPA/region/retention da chiudere; ORS quote e termini non verificati |
 | Meteo | Open-Meteo Free | Solo uso non commerciale; attribuzione e informativa coordinate/log |
 | Dati luoghi | Wikidata; Overpass solo complementare | Provenienza e licenze per campo; rispetto dei limiti dell'istanza |
 | Visione AI | Nessun provider attivo | Budget zero e non conservazione non soddisfatti insieme dalle opzioni verificate |
@@ -43,10 +43,11 @@ Le voci con lacune restano spente fino alla verifica; non aggirare il budget.
 | [MapTiler Cloud](https://www.maptiler.com/cloud/pricing/) | Free $0: 100k richieste API/mese, 5k sessioni; con MapLibre distinguere richieste tile dalle sessioni SDK. Free si sospende alla quota; Flex da $30/mese con extra | Free per test/personale/non commerciale; logo MapTiler e attribuzione OSM. Termini generali verificati; diritti cloud specifici su proxy, cache e offline: non verificato | Regione dei dati, log e subprocessori: non verificato; non dedurre UE dalla sede svizzera. Italia da provare |
 | [PMTiles su storage proprio](https://docs.protomaps.com/deploy/) | Nessun servizio tile da pagare a Protomaps per il solo formato; bucket, dati, richieste e banda hanno costi propri: totale zero non verificato | La guida prevede bucket, richieste range, funzione e CDN. Diritti dipendono dal dataset; licenza dei dati e dello stile e manutenzione librerie da verificare prima dell'uso | Posizione controllabile tramite hosting scelto, non ancora scelto. Un estratto Italia limita dimensioni ma non garantisce completezza |
 
-Raccomandazione: MapTiler come candidato online non commerciale, subordinato
-alle verifiche cloud; PMTiles/dataset nostro come direzione per offline, non
-come fallback gratuito gia' disponibile. OSMF non e' il backend di produzione
-predefinito. La cache tecnica non autorizza la funzione scarica area.
+Raccomandazione originale del passo 1 (superata al passo 6): MapTiler come
+candidato online non commerciale. Il passo 6 adotta OpenFreeMap per tile online,
+con i limiti aggiunti nella sezione successiva. PMTiles/dataset nostro resta una
+direzione offline, non un fallback gratuito gia' disponibile. OSMF non e' il
+backend di produzione predefinito. La cache tecnica non autorizza download area.
 
 Fonti ulteriori: [termini MapTiler](https://www.maptiler.com/terms/) e
 [licenza OSM](https://www.openstreetmap.org/copyright). La pagina generale
@@ -79,10 +80,13 @@ alla policy, che vieta anche usi generici tramite piattaforme no-code/vibe-codin
 | [openrouteservice / HeiGIT](https://openrouteservice.org/) | La pagina ufficiale dichiara una chiave Standard gratuita; quote correnti, prezzi extra e frequenza: non verificato | Sito ufficiale temporaneamente indisponibile; vecchie pagine plans/terms restituiscono 404. Uso pubblico, commerciale, cache e durata conservazione: non verificato | Regione API/log e retention: non verificato. Profili e copertura Italia da verificare nella documentazione prima dell'integrazione |
 | [GraphHopper](https://www.graphhopper.com/pricing/) | Free senza carta, non commerciale; quantita' precisa Free non estratta, non verificato. Basic 69 EUR/mese, 5.000 crediti/giorno; crediti non sempre equivalenti a richieste | Free senza garanzie e con profili/modalita' limitati. Attribuzioni dati richieste; cache e salvataggio geometrie/durate: non verificato | [Docs](https://docs.graphhopper.com/) dichiarano OSM come fonte predefinita, TomTom alternativa. Regione/retention: non verificato; qualita' Italia da provare |
 
-Raccomandazione: openrouteservice come primo candidato, ma non integrarlo
-finche' quote, termini e trattamento non saranno leggibili e verificati.
+Raccomandazione originale del passo 1: openrouteservice come primo candidato,
+ma non integrarlo finche' quote, termini e trattamento non sono verificati.
 Non riportare come correnti vecchi limiti 2.000/giorno presi da tutorial.
 GraphHopper e' alternativa non commerciale, non un'autorizzazione ad attivare Basic.
+Al passo 6 LocationIQ Directions è stato valutato come adapter opt-in: endpoint e
+request/response sono documentati, ma l'attivazione resta condizionata a DPA e
+valutazione privacy; ORS e GraphHopper restano non selezionati.
 Fallback: ordine tappe e collegamento visivo diretto chiaramente non stradale,
 senza inventare tempi di percorrenza. Nessuna delle due opzioni attesta orari
 treno/volo o routing trasporto pubblico completo.
@@ -224,4 +228,76 @@ localita' urbane/rurali, civici, musei, sentieri e nomi ambigui, senza dati priv
 
 Controlli automatici: presenza delle nove categorie, 2-3 opzioni per categoria,
 fonti HTTPS, raccomandazioni e campi non verificati; collegamenti locali Markdown.
-Nessun test live delle API: volutamente nessuna chiave o account in questa fase.
+Test live nel passo 6: solo tile OpenFreeMap in browser con dati sintetici; nessuna
+richiesta LocationIQ o ORS e nessuna chiave/account provider creati.
+
+## Addendum passo 6: tile e servizi geospaziali
+
+Fonti ufficiali ricontrollate il 2026-10-26 prima dell'integrazione.
+
+### Tile: OpenFreeMap
+
+Fatti verificati su [sito](https://openfreemap.org/), [ToS](https://openfreemap.org/tos/),
+[privacy](https://openfreemap.org/privacy/) e [quick start](https://openfreemap.org/quick_start/):
+istanza pubblica dichiarata gratuita, senza numero massimo di richieste/pubblicazioni,
+registrazione, API key o cookie; uso commerciale esplicitamente ammesso. Attribuzione
+OpenMapTiles e OpenStreetMap richiesta; MapLibre la mostra dal TileJSON/style. Tile,
+glyph e sprite sono richiesti al dominio tiles.openfreemap.org. Servizio as-is, senza
+SLA e revocabile. Il provider può usare Cloudflare; residenza dei dati e regione dei
+log non garantite. Log accessi anonimizzati per 7 giorni; i log d'errore possono
+contenere IP e URL per 7 giorni; logging IP temporaneo per incidenti fino a 30 giorni.
+ToS aggiornata 14 ottobre 2026 e privacy 8 ottobre 2026. Chi integra il servizio deve
+avere almeno 18 anni e capacità legale di accettare i termini: requisito da confermare
+prima del rilascio pubblico. Offline: massimo 3.000 tile o 50 MB per download, massimo
+4 richieste parallele e User-Agent univoco; dimensioni superiori richiedono accordo.
+
+Decisione passo 6: usare l'istanza pubblica OpenFreeMap solo per tile online tramite
+MapLibre. Nessun tile viene precache/runtime-cache dal service worker; l'archivio
+manuale dell'itinerario resta disponibile quando il provider non risponde. I limiti
+offline non vengono implementati qui e restano al passo 7. L'istanza usa dati OSM/
+OpenMapTiles; mantenere visibile l'attribuzione e verificare le licenze delle fonti.
+Qualità specifica Italia e disponibilità futura: non verificato; il test browser ha
+caricato tile e glyph di una vista sintetica di Roma, senza benchmark territoriale.
+
+MapTiler Free resta alternativa esclusa come default: la pagina ufficiale corrente
+lo dichiara adatto a test, prototipi, uso personale o non commerciale. Una app
+pubblica gratuita non è automaticamente non commerciale; inoltre Free ha limiti di
+100k richieste API e 5k sessioni/mese, si sospende a quota e richiede logo MapTiler.
+Termini specifici cache/proxy e regione non verificati. OSMF public raster resta
+escluso per produzione/offline secondo policy, nonostante il costo nominale zero.
+
+### Geocoding e routing: LocationIQ opzionale
+
+Fatti verificati su [pricing](https://locationiq.com/pricing),
+[ToS](https://locationiq.com/tos), [DPA](https://locationiq.com/dpa),
+[Search API](https://docs.locationiq.com/docs/search-forward-geocoding),
+[Directions API](https://docs.locationiq.com/docs/directions-api) e
+[attribution](https://locationiq.com/attribution): piano Free 5.000 richieste/giorno,
+2 richieste/secondo e 60/minuto; uso commerciale limitato ammesso con link
+"Search by LocationIQ.com"; coppie richiesta/risposta in cache per massimo 48 ore
+nel piano Free. La documentazione indica endpoint UE `eu1.locationiq.com` per search,
+reverse e directions. Directions supporta driving/walking e fino a 25 coordinate,
+ordinate longitude/latitude; l'API espone geometry, distanza e durata. La documentazione
+non specifica una quota separata per routing: quota geocoding/routing è trattata come
+condivisa e l'adapter limita l'uso complessivo localmente a 4.500/giorno, 60/minuto,
+2/secondo, timeout 3s e cache in-memory massimo 48 ore.
+
+Limiti: DPA disponibile, ma ruoli descritti non sono sufficientemente chiari per
+assumere un accordo standard controller/processor; residenza effettiva dei log,
+retention e trasferimenti dal DPA non verificati. Endpoint EU non garantisce da solo
+trattamento UE esclusivo. Geocoding e routing inviano testo/coordinate di viaggio a
+LocationIQ: UI mostra disclosure e solo un'azione esplicita invia la richiesta. La key
+è solo server. L'opt-in richiede `MAP_LOCATIONIQ_ENABLED=true` e `LOCATIONIQ_API_KEY`;
+entrambi assenti per default. Non sono stati effettuati test live LocationIQ. Prima di
+abilitare in produzione occorrono riesame del DPA, informativa privacy e decisione
+esplicita sul trasferimento di coordinate a un provider con sede in India.
+
+### Routing: ORS non selezionato
+
+Le pagine ufficiali correnti di ORS restano parzialmente indisponibili: la homepage
+avvisa della chiusura e `plans/` restituisce 404; la documentazione backend spiega gli
+endpoint ma non prova prezzi/quote/termini di hosting API. Anche se la pagina dichiara
+una chiave Standard gratuita, quote, cache geometrie, retention, regione e uso
+pubblico restano non verificato. ORS non viene integrato. Quando il routing è assente
+la mappa mostra soltanto una linea diretta tratteggiata etichettata esplicitamente
+"collegamento schematico, non stradale" e non mostra distanza o durata inventate.
