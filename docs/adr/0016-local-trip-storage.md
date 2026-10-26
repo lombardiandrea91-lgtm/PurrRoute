@@ -20,8 +20,9 @@ serve per testare il repository in Node, ma non sostituisce verifiche browser re
 ## Conseguenze e limiti
 
 La UI resta utilizzabile senza account o rete. IndexedDB puo' essere cancellato o
-evicted e non e' un backup. Il modello prepara sincronizzazione futura, ma non
-definisce conflitti, coda, trasferimento ospite/account o sync; sono passo 7.
+evicted e non e' un backup. ADR-0018 definisce la sync owner-only del passo 7,
+la coda derivata dalle revisioni, il trasferimento singolo esplicito e il conflitto
+con scelta utente; non c'è merge automatico o sync in background.
 L'orario viene salvato come timestamp ISO; input e visualizzazione usano il fuso
 del browser. Il viaggio memorizza il fuso rilevato alla creazione, ma la modifica
 del fuso per viaggio e la relativa conversione sono ancora da implementare.

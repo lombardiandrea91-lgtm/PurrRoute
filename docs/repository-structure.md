@@ -48,9 +48,11 @@ API REST modulare e npm workspaces; niente microservizi o orchestratore monorepo
 ## Evoluzione e verifica
 
 Al passo 2 nasce il design system. Al passo 3 nasce il client PWA; al passo 4
-backend e schema; al passo 5 il nucleo locale; al passo 7 la sync completa.
-IDs stabili, revisioni, cancellazioni e idempotenza vanno considerati prima della
-sync, senza implementare prematuramente la politica dei conflitti.
+backend e schema; al passo 5 il nucleo locale; al passo 7 sync owner-only e mappe
+offline limitate; al passo 8 checklist/packing e registro spese locali. ID stabili,
+revisioni e tombstone sono usati; conflitti restituiscono
+409 e richiedono scelta esplicita, senza merge automatico. Retry idempotenti e
+collaborazione restano da completare.
 
 Le versioni backend sono registrate in ADR-0015; le scelte degli altri moduli
 restano nei rispettivi ADR. I file ambiente server non entrano nel repository;

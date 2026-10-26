@@ -1,6 +1,6 @@
 # ADR-0003: PostgreSQL e IndexedDB local-first
 
-Stato: accettato; primo schema nel passo 4, sync ancora da progettare.
+Stato: accettato; schema nel passo 4, sync MVP owner-only nel passo 7 (ADR-0018).
 Data: 2026-10-26.
 
 ## Contesto e decisione
@@ -31,9 +31,9 @@ Solo server impedirebbe l'uso offline; solo browser non permetterebbe una copia
 condivisa e controlli di accesso autorevoli. Una piattaforma sync esterna
 contrasterebbe con la scelta di possedere la logica applicativa.
 
-Il nucleo locale arriva al passo 5; sync e conflitti al passo 7. Considerare
-IDs stabili, revisioni, tombstone e idempotenza gia' nei contratti dei passi 4 e 5.
-Non promettere merge automatici prima di definirne la politica.
+Il nucleo locale arriva al passo 5; il passo 7 aggiunge snapshot owner-only,
+versione server per viaggio, tombstone, coda locale derivata dalle revisioni e
+risoluzione esplicita 409 senza merge. L'idempotenza dei retry non è ancora garantita.
 IndexedDB puo' subire cancellazione o eviction: non e' backup. Gestire quota,
 export e isolamento locale tra ospite e account. Il trasferimento dei viaggi
 ospite all'account richiede conferma esplicita. Il server ricontrolla ogni permesso.

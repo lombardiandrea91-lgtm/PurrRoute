@@ -85,6 +85,111 @@ export const RouteResponseSchema = Type.Object({
   provider: Type.String(),
 }, { additionalProperties: false });
 
+const SyncMetadataSchema = {
+  id: Type.String({ format: 'uuid' }),
+  revision: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
+  createdAt: Type.String({ format: 'date-time' }),
+  updatedAt: Type.String({ format: 'date-time' }),
+  deletedAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
+};
+
+export const SyncTripSchema = Type.Object({
+  ...SyncMetadataSchema,
+  title: Type.String({ minLength: 1, maxLength: 160 }),
+  description: Type.Union([Type.String({ maxLength: 2000 }), Type.Null()]),
+  startsOn: Type.Union([Type.String({ format: 'date' }), Type.Null()]),
+  endsOn: Type.Union([Type.String({ format: 'date' }), Type.Null()]),
+  timeZone: Type.Union([Type.String({ maxLength: 100 }), Type.Null()]),
+}, { additionalProperties: false });
+
+export const SyncDaySchema = Type.Object({
+  ...SyncMetadataSchema,
+  tripId: Type.String({ format: 'uuid' }),
+  date: Type.String({ format: 'date' }),
+  position: Type.Integer({ minimum: 0, maximum: 1000 }),
+}, { additionalProperties: false });
+
+export const SyncStopSchema = Type.Object({
+  ...SyncMetadataSchema,
+  tripId: Type.String({ format: 'uuid' }),
+  dayId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
+  name: Type.String({ minLength: 1, maxLength: 200 }),
+  category: Type.Union([
+    Type.Literal('departure'), Type.Literal('destination'), Type.Literal('waypoint'),
+    Type.Literal('lodging'), Type.Literal('restaurant'), Type.Literal('cafe'),
+    Type.Literal('attraction'), Type.Literal('museum'), Type.Literal('train'),
+    Type.Literal('flight'), Type.Literal('car'), Type.Literal('nature'),
+    Type.Literal('beach'), Type.Literal('shopping'),
+  ]),
+  planningState: Type.Union([Type.Literal('planned'), Type.Literal('optional')]),
+  isFavorite: Type.Boolean(),
+  visitedAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
+  position: Type.Integer({ minimum: 0, maximum: 10000 }),
+  address: Type.Union([Type.String({ maxLength: 500 }), Type.Null()]),
+  latitude: Type.Union([Type.Number({ minimum: -90, maximum: 90 }), Type.Null()]),
+  longitude: Type.Union([Type.Number({ minimum: -180, maximum: 180 }), Type.Null()]),
+  scheduledAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
+  durationMinutes: Type.Union([Type.Integer({ minimum: 0, maximum: 100000 }), Type.Null()]),
+  locationSource: Type.Union([Type.Literal('manual'), Type.Literal('locationiq'), Type.Null()]),
+  sourcePlaceId: Type.Union([Type.String({ minLength: 1, maxLength: 100 }), Type.Null()]),
+}, { additionalProperties: false });
+
+export const SyncListSchema = Type.Object({
+  ...SyncMetadataSchema,
+  tripId: Type.String({ format: 'uuid' }),
+  title: Type.String({ minLength: 1, maxLength: 160 }),
+  kind: Type.Union([Type.Literal('checklist'), Type.Literal('packing')]),
+}, { additionalProperties: false });
+
+export const SyncListItemSchema = Type.Object({
+  ...SyncMetadataSchema,
+  listId: Type.String({ format: 'uuid' }),
+  label: Type.String({ minLength: 1, maxLength: 240 }),
+  checkedAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
+  position: Type.Integer({ minimum: 0, maximum: 10000 }),
+}, { additionalProperties: false });
+
+export const SyncExpenseSchema = Type.Object({
+  ...SyncMetadataSchema,
+  tripId: Type.String({ format: 'uuid' }),
+  description: Type.String({ minLength: 1, maxLength: 240 }),
+  amountMinor: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+  currency: Type.String({ pattern: '^[A-Z]{3}$' }),
+  spentAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
+  paidByUserId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
+}, { additionalProperties: false });
+
+export const SyncTripRequestSchema = Type.Object({
+  expectedVersion: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+  trip: SyncTripSchema,
+  days: Type.Array(SyncDaySchema, { maxItems: 366 }),
+  stops: Type.Array(SyncStopSchema, { maxItems: 1000 }),
+  lists: Type.Array(SyncListSchema, { maxItems: 100 }),
+  listItems: Type.Array(SyncListItemSchema, { maxItems: 10000 }),
+  expenses: Type.Array(SyncExpenseSchema, { maxItems: 10000 }),
+}, { additionalProperties: false });
+
+export const SyncTripResponseSchema = Type.Object({
+  version: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
+  trip: SyncTripSchema,
+  days: Type.Array(SyncDaySchema, { maxItems: 366 }),
+  stops: Type.Array(SyncStopSchema, { maxItems: 1000 }),
+  lists: Type.Array(SyncListSchema, { maxItems: 100 }),
+  listItems: Type.Array(SyncListItemSchema, { maxItems: 10000 }),
+  expenses: Type.Array(SyncExpenseSchema, { maxItems: 10000 }),
+  syncedAt: Type.String({ format: 'date-time' }),
+}, { additionalProperties: false });
+
+export const SyncTripListSchema = Type.Array(SyncTripResponseSchema, { maxItems: 1000 });
+
+export const SyncConflictSchema = Type.Object({
+  error: Type.Literal('sync_conflict'),
+  current: Type.Union([SyncTripResponseSchema, Type.Null()]),
+}, { additionalProperties: false });
+
+export type SyncTripRequest = Type.Static<typeof SyncTripRequestSchema>;
+export type SyncTripResponse = Type.Static<typeof SyncTripResponseSchema>;
+
 export const AcceptedResponseSchema = Type.Object({
   accepted: Type.Literal(true),
 }, { additionalProperties: false });

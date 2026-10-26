@@ -1,8 +1,8 @@
 # Shell PWA
 
-Passo 3 implementato il 2026-10-26. Gate locali passati; installazione Android
-reale e pubblicazione HTTPS non verificate. Il passo 6 rende l'MVP utilizzabile con
-tile online; queste verifiche PWA esterne restano separate.
+Passi 3 e 7 implementati localmente. Gate browser/build passati; installazione Android
+reale e pubblicazione HTTPS non verificate. ADR-0018 descrive sync e cache tile offline;
+il server PostgreSQL reale e le email di produzione restano prerequisiti per account reali.
 
 ## Come avviarla
 
@@ -38,8 +38,9 @@ copie e la directory dist non vanno modificate manualmente.
   aggiornamento SW su comando esplicito, niente refresh forzato silenzioso.
 - Shell e asset nostri in precache Workbox; route SPA disponibili offline dopo
   prima visita completa, pagina statica `/offline.html` disponibile anche da sola.
-- Nessun tile, API o documento in cache runtime. `/api` e `/api/*` sono esclusi
-  dal fallback del service worker; la preview Vite non e' un server API.
+- Nessuna API privata o documento in cache runtime. Solo `/api/maps/tiles/*` entra
+  nella cache `purrroute-map-tiles` (3.200 risorse/30 giorni); le route `/api` restano
+  escluse dal fallback SPA. La preview Vite non è un server API.
 
 La route `/map` ora usa MapLibre con tile online OpenFreeMap, pin SVG delle 14
 categorie, cluster, selezione lista↔mappa e inserimento manuale di coordinate.
@@ -47,9 +48,11 @@ Il click Posizione richiede permesso soltanto su gesto utente. Il percorso strad
 è un'azione esplicita; se il provider non è configurato resta il collegamento
 tratteggiato dichiarato schematico, senza distanza o tempi inventati. Geocoding e
 routing LocationIQ sono disattivati per default e richiedono opt-in server.
-Tile/style/glyph e dati viaggio non entrano nella cache service worker. L'archivio
-IndexedDB resta usabile senza i servizi remoti; le mappe offline sono rinviate al
-passo 7 e devono rispettare i limiti del tile provider.
+Style, TileJSON, tile, glyph e sprite proxati possono essere conservati nella cache
+runtime. Il download esplicito sostituisce l'area precedente, rispetta 3.000 tile,
+50 MiB e 4 richieste concorrenti; la schermata Offline mostra risorse in cache e può
+svuotarle. Cache Storage è best-effort, non backup, e il servizio resta revocabile.
+L'archivio viaggi resta usabile senza rete; la sync è manuale e richiede account online.
 
 ## Verifiche eseguite
 

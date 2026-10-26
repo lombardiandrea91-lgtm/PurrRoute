@@ -4,6 +4,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { down as downCore, up as upCore } from '../db/migrations/001_create_core_schema.js';
 import { down as downSchedule, up as upSchedule } from '../db/migrations/002_add_stop_schedule.js';
 import { down as downLocationSource, up as upLocationSource } from '../db/migrations/003_add_stop_location_source.js';
+import { down as downSyncVersion, up as upSyncVersion } from '../db/migrations/004_add_trip_sync_version.js';
 
 function captureSql(migration) {
   const statements = [];
@@ -48,6 +49,7 @@ test('PostgreSQL applica la migrazione e fa rispettare vincoli e rollback', asyn
   await database.exec(captureSql(upCore));
   await database.exec(captureSql(upSchedule));
   await database.exec(captureSql(upLocationSource));
+  await database.exec(captureSql(upSyncVersion));
   const ownerId = '00000000-0000-4000-8000-000000000001';
   const otherTripId = '00000000-0000-4000-8000-000000000002';
   const tripId = '00000000-0000-4000-8000-000000000003';
@@ -61,6 +63,17 @@ test('PostgreSQL applica la migrazione e fa rispettare vincoli e rollback', asyn
     'INSERT INTO trips (id, owner_id, title) VALUES ($1, $2, $3), ($4, $2, $5)',
     [tripId, ownerId, 'Roma', otherTripId, 'Milano'],
   );
+  const initialSyncVersion = await database.query(
+    'SELECT sync_version FROM trips WHERE id = $1',
+    [tripId],
+  );
+  assert.equal(initialSyncVersion.rows[0].sync_version, 0);
+  await database.query('UPDATE trips SET sync_version = sync_version + 1 WHERE id = $1', [tripId]);
+  const updatedSyncVersion = await database.query(
+    'SELECT sync_version FROM trips WHERE id = $1',
+    [tripId],
+  );
+  assert.equal(updatedSyncVersion.rows[0].sync_version, 1);
   await database.query(
     'INSERT INTO trip_days (id, trip_id, day_date, position) VALUES ($1, $2, $3, 0)',
     [dayId, tripId, '2026-10-26'],
@@ -97,6 +110,7 @@ test('PostgreSQL applica la migrazione e fa rispettare vincoli e rollback', asyn
     ['00000000-0000-4000-8000-000000000008', tripId, dayId, 'Fonte senza ID', 'waypoint'],
   ));
 
+  await database.exec(captureSql(downSyncVersion));
   await database.exec(captureSql(downLocationSource));
   await database.exec(captureSql(downSchedule));
   await database.exec(captureSql(downCore));

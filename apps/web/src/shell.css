@@ -41,6 +41,17 @@ h2 { font-size: 16px; font-weight: 600; margin: 0; }
 .settings { max-width: 750px; }
 .settings fieldset { border: 0; padding: 0 0 28px; margin: 32px 0 0; border-bottom: 1px solid var(--border); min-width: 0; }
 .settings legend { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+.account-settings label { display: grid; gap: 7px; margin: 12px 0; font-size: 14px; }
+.account-settings input { width: min(100%, 480px); min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); font: inherit; }
+.account-actions, .trip-sync-conflict { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.trip-sync-panel { display: grid; justify-items: start; gap: 10px; margin-top: 24px; padding: 18px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.trip-sync-panel h2, .trip-sync-panel p { margin: 0; }
+.trip-sync-conflict { padding-left: 12px; border-left: 3px solid var(--action); }
+.trip-cloud-panel { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
+.trip-cloud-panel h2 { margin-bottom: 12px; }
+.trip-cloud-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.trip-cloud-row strong { overflow-wrap: anywhere; }
+.trip-cloud-row .trip-button { grid-column: 1 / -1; justify-self: start; }
 .segmented { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .segmented label { min-height: 44px; display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 14px; cursor: pointer; }
 input { accent-color: var(--action); }
@@ -83,6 +94,27 @@ input { accent-color: var(--action); }
 .trip-dates { margin: 8px 0 0; color: var(--secondary); font-size: 13px; }
 .trip-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); }
 .trip-section-heading { margin-bottom: 14px; }
+.logistics-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.logistics-columns h3 { margin: 0 0 14px; font-size: 14px; }
+.logistics-create-list, .logistics-expense-form, .logistics-list-heading, .logistics-add-item { display: grid; gap: 10px; }
+.logistics-create-list { grid-template-columns: minmax(0, 1fr) minmax(100px, .7fr) auto; align-items: end; }
+.logistics-create-list label, .logistics-expense-form label, .logistics-list-heading label, .logistics-add-item label { display: grid; gap: 6px; min-width: 0; color: var(--secondary); font-size: 12px; }
+.logistics-create-list input, .logistics-create-list select, .logistics-expense-form input, .logistics-list-heading input, .logistics-add-item input { width: 100%; min-width: 0; min-height: 42px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); font: inherit; font-size: 14px; }
+.logistics-list-stack { display: grid; gap: 16px; margin-top: 16px; }
+.logistics-list { min-width: 0; padding: 14px 0; border-top: 1px solid var(--border); }
+.logistics-list-heading { grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: end; }
+.logistics-list-heading > span { padding-bottom: 11px; color: var(--secondary); font-size: 12px; }
+.logistics-items, .logistics-expense-list { list-style: none; margin: 10px 0; padding: 0; }
+.logistics-items li, .logistics-expense-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.logistics-items li label { display: flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.logistics-items .is-checked { color: var(--secondary); text-decoration: line-through; }
+.logistics-remove { border: 0; background: transparent; color: var(--secondary); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; }
+.logistics-add-item { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.logistics-money-fields { display: grid; grid-template-columns: minmax(0, 1fr) 90px; gap: 10px; }
+.logistics-subtotals { display: flex; flex-wrap: wrap; gap: 12px; padding: 14px 0; font-size: 14px; font-weight: 700; }
+.logistics-expense-list li { grid-template-columns: minmax(0, 1fr) auto auto; }
+.logistics-expense-list li span { display: grid; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.logistics-expense-list small { color: var(--secondary); font-size: 11px; }
 .trip-day-tabs { display: flex; flex-wrap: wrap; gap: 7px; }
 .trip-day-tab { min-height: 40px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 5px; color: var(--text); background: var(--surface); font: inherit; font-size: 13px; cursor: pointer; }
 .trip-day-tab[aria-selected="true"] { border-color: var(--action); box-shadow: inset 0 -2px var(--action); }
@@ -109,6 +141,14 @@ input { accent-color: var(--action); }
   .trip-stop-edit { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .trip-stop-edit .trip-field:first-child, .trip-stop-edit .trip-field:nth-child(4) { grid-column: 1 / -1; }
   .trip-form-actions .trip-button { flex: 1; }
+  .logistics-columns { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .logistics-create-list { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .logistics-create-list .trip-button { grid-column: 1 / -1; justify-self: start; }
+  .logistics-list-heading { grid-template-columns: minmax(0, 1fr) minmax(0, auto); }
+  .logistics-list-heading > span { padding: 0; }
+  .logistics-list-heading button { justify-self: start; }
+  .logistics-expense-list li { grid-template-columns: minmax(0, 1fr) auto; }
+  .logistics-expense-list .logistics-remove { grid-column: 1 / -1; justify-self: start; }
 }
 @media (max-width: 1000px) {
   .sidebar { width: 200px; padding: 24px 16px; }

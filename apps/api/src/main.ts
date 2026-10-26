@@ -2,6 +2,7 @@ import { AuthService, DevelopmentMailSink } from './auth/auth-service.ts';
 import { PostgresAuthRepository } from './auth/postgres-auth-repository.ts';
 import { createPostgresDatabase } from './db/postgres-database.ts';
 import { LocationIqAdapter } from './maps/locationiq-adapter.ts';
+import { PostgresSyncRepository } from './sync/postgres-sync-repository.ts';
 import { buildServer, type BuildServerOptions } from './server.ts';
 
 const environment = process.env;
@@ -24,9 +25,10 @@ if (!Number.isSafeInteger(port) || port < 1 || port > 65535) {
 
 const database = createPostgresDatabase(connectionString);
 const repository = new PostgresAuthRepository(database);
+const sync = new PostgresSyncRepository(database);
 const mailSink = new DevelopmentMailSink();
 const auth = new AuthService(repository, mailSink);
-const options: BuildServerOptions = { auth, mailSink, production };
+const options: BuildServerOptions = { auth, mailSink, production, sync };
 if (environment.WEB_ORIGIN) options.webOrigin = webOrigin;
 const enableLocationIq = environment.MAP_LOCATIONIQ_ENABLED === 'true';
 if (enableLocationIq && !environment.LOCATIONIQ_API_KEY) {

@@ -20,7 +20,9 @@ for (const icon of manifest.icons) {
   assert.match(icon.src, /^\/app-assets\/[a-z0-9-]+\.png$/);
   await access(join(directory, icon.src.slice(1)));
 }
-await access(join(directory, 'sw.js'));
+const serviceWorker = await readFile(join(directory, 'sw.js'), 'utf8');
+assert.match(serviceWorker, /purrroute-map-tiles/);
+assert.match(serviceWorker, /\/api\/maps\/tiles\//);
 await access(join(directory, 'offline.html'));
 await access(join(directory, 'licenses/PlusJakartaSans-OFL.txt'));
 const index = await readFile(join(directory, 'index.html'), 'utf8');

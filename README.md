@@ -13,7 +13,12 @@ implementato local-first con Dexie. Passo 6 implementato e verificato localmente
 come MVP:
 MapLibre/OpenFreeMap, pin, cluster, selezione lista↔mappa e inserimento manuale di
 coordinate. Geocoding/routing LocationIQ restano opt-in con verifica privacy/termini
-aperta; ORS non è selezionato. Mappe offline e sincronizzazione restano al passo 7.
+aperta; ORS non è selezionato. Passo 7 implementato e verificato localmente:
+sync manuale owner-only con conflitti espliciti e download di una singola area tile
+entro i limiti OpenFreeMap. Passo 8 implementato localmente: checklist/valigia e
+registro spese con subtotali per valuta; partecipa alla sync del viaggio.
+PostgreSQL reale, email di produzione e account reali restano da verificare;
+non è un backup né una sync in background.
 Dal 2026-10-26 l'utente autorizza a procedere senza approvazioni intermedie,
 preservando ordine dei passi, budget e vincoli.
 
@@ -45,6 +50,8 @@ preservando ordine dei passi, budget e vincoli.
 | [0015](docs/adr/0015-api-dependencies.md) | Dipendenze API, validazione, password e migrazioni |
 | [0016](docs/adr/0016-local-trip-storage.md) | Archivio locale viaggi e scheduling tappe |
 | [0017](docs/adr/0017-maps-and-location-services.md) | Renderer, tile, geocoding e routing |
+| [0018](docs/adr/0018-offline-maps-and-sync.md) | Sync owner-only e cache tile limitata |
+| [0019](docs/adr/0019-trip-logistics.md) | Checklist, packing list e spese locali |
 
 ## Consultazione e avvio
 

@@ -1,6 +1,7 @@
 import cookie from '@fastify/cookie';
 import csrfProtection from '@fastify/csrf-protection';
 import rateLimit from '@fastify/rate-limit';
+import Type from 'typebox';
 import Fastify, {
   type FastifyInstance,
   type FastifyReply,
@@ -19,6 +20,10 @@ import {
   LoginResponseSchema,
   PasswordResetRequestSchema,
   RegisterRequestSchema,
+  SyncConflictSchema,
+  SyncTripListSchema,
+  SyncTripRequestSchema,
+  SyncTripResponseSchema,
   TokenRequestSchema,
 } from '@purrroute/contracts';
 import type { AuthService, DevelopmentMailSink } from './auth/auth-service.ts';
@@ -29,10 +34,15 @@ import type {
   LoginRequest,
   PasswordResetRequest,
   RegisterRequest,
+  SyncTripRequest,
+  SyncTripResponse,
   TokenRequest,
 } from '@purrroute/contracts';
 import { registerMapRoutes } from './maps/routes.ts';
 import type { MapServices } from './maps/routes.ts';
+import { OpenFreeMapTiles, registerOpenFreeMapTileRoutes } from './maps/openfreemap-tiles.ts';
+import { SyncPayloadError } from './sync/postgres-sync-repository.ts';
+import type { SyncPushResult } from './sync/postgres-sync-repository.ts';
 
 type AuthRoutes = Pick<
   AuthService,
@@ -51,13 +61,84 @@ type AuthRoutes = Pick<
 export interface BuildServerOptions {
   auth?: AuthRoutes;
   maps?: MapServices;
+  tiles?: OpenFreeMapTiles;
+  sync?: SyncRoutes;
   mailSink?: DevelopmentMailSink;
   production?: boolean;
   webOrigin?: string;
 }
 
+export interface SyncRoutes {
+  listTrips(userId: string): Promise<SyncTripResponse[]>;
+  getTrip(userId: string, tripId: string): Promise<SyncTripResponse | null>;
+  pushTrip(userId: string, request: SyncTripRequest): Promise<SyncPushResult>;
+}
+
 function isLoopbackAddress(address: string): boolean {
   return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
+}
+
+function addSyncRoutes(
+  app: FastifyInstance,
+  auth: AuthRoutes,
+  sync: SyncRoutes,
+  production: boolean,
+): void {
+  const sessionCookieName = production ? '__Host-purrroute_session' : 'purrroute_session';
+  const csrfGuard: preHandlerHookHandler = (request, reply, done) => {
+    app.csrfProtection(request, reply, done);
+  };
+  const authenticate = (request: FastifyRequest) => auth.authenticate(request.cookies[sessionCookieName]);
+
+  app.get('/api/sync/trips', {
+    schema: { response: { 200: SyncTripListSchema, 401: ApiErrorSchema } },
+  }, async (request, reply) => {
+    const session = await authenticate(request);
+    if (!session) return reply.code(401).send({ error: 'unauthenticated' });
+    return sync.listTrips(session.account.id);
+  });
+
+  app.get<{ Params: { tripId: string } }>('/api/sync/trips/:tripId', {
+    schema: {
+      params: Type.Object({ tripId: Type.String({ format: 'uuid' }) }, { additionalProperties: false }),
+      response: { 200: SyncTripResponseSchema, 401: ApiErrorSchema, 404: ApiErrorSchema },
+    },
+  }, async (request, reply) => {
+    const session = await authenticate(request);
+    if (!session) return reply.code(401).send({ error: 'unauthenticated' });
+    const snapshot = await sync.getTrip(session.account.id, request.params.tripId);
+    if (!snapshot) return reply.code(404).send({ error: 'trip_not_found' });
+    return snapshot;
+  });
+
+  app.post<{ Body: SyncTripRequest }>('/api/sync/trips', {
+    schema: {
+      body: SyncTripRequestSchema,
+      response: {
+        200: SyncTripResponseSchema,
+        400: ApiErrorSchema,
+        401: ApiErrorSchema,
+        404: ApiErrorSchema,
+        409: SyncConflictSchema,
+      },
+    },
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    preHandler: csrfGuard,
+  }, async (request, reply) => {
+    const session = await authenticate(request);
+    if (!session) return reply.code(401).send({ error: 'unauthenticated' });
+    try {
+      const result = await sync.pushTrip(session.account.id, request.body);
+      if (result.kind === 'not_found') return reply.code(404).send({ error: 'trip_not_found' });
+      if (result.kind === 'conflict') {
+        return reply.code(409).send({ error: 'sync_conflict', current: result.current });
+      }
+      return result.snapshot;
+    } catch (error) {
+      if (error instanceof SyncPayloadError) return reply.code(400).send({ error: 'invalid_sync_payload' });
+      throw error;
+    }
+  });
 }
 
 function addAuthRoutes(
@@ -215,6 +296,10 @@ export function buildServer(options: BuildServerOptions = {}) {
   });
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof AuthError) return reply.code(error.statusCode).send({ error: error.code });
+    if (typeof error === 'object' && error !== null
+      && 'code' in error && error.code === 'FST_CSRF_INVALID_TOKEN') {
+      return reply.code(403).send({ error: 'csrf_invalid' });
+    }
     if (typeof error === 'object' && error !== null && 'validation' in error) {
       return reply.code(400).send({ error: 'invalid_request' });
     }
@@ -232,7 +317,9 @@ export function buildServer(options: BuildServerOptions = {}) {
   }));
 
   if (options.auth) addAuthRoutes(app, options.auth, production, options.mailSink);
+  if (options.auth && options.sync) addSyncRoutes(app, options.auth, options.sync, production);
   registerMapRoutes(app, options.maps);
+  registerOpenFreeMapTileRoutes(app, options.tiles);
 
   return app;
 }

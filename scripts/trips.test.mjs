@@ -138,3 +138,107 @@ test('coordinate tappa sono opzionali ma sempre una coppia valida', async () => 
     assert.equal(manuallyRepositioned.sourcePlaceId, null);
   });
 });
+
+test('sync locale rileva modifiche, conserva owner ospite e applica lo snapshot scelto', async () => {
+  await withRepository(async (repository) => {
+    const trip = await repository.createTrip({ title: 'Bologna' });
+    const day = await repository.createDay(trip.id, { date: '2026-10-27' });
+    await repository.createStop(trip.id, { name: 'Due Torri', category: 'attraction', dayId: day.id });
+    const accountId = '40000000-0000-4000-8000-000000000001';
+    const details = await repository.getTrip(trip.id);
+    const { ownerId, ...tripForSync } = details.trip;
+    assert.ok(ownerId);
+    assert.deepEqual((await repository.listSyncCandidates(accountId)).map((item) => item.id), [trip.id]);
+
+    await repository.markTripSynced(trip.id, accountId, 1, details.trip.revision, '2026-10-26T12:00:00.000Z');
+    assert.deepEqual(await repository.listSyncCandidates(accountId), []);
+    await repository.updateStop(details.stops[0].id, { isFavorite: true });
+    assert.deepEqual((await repository.listSyncCandidates(accountId)).map((item) => item.id), [trip.id]);
+
+    await repository.deleteStop(trip.id, details.stops[0].id);
+    assert.equal((await repository.getTrip(trip.id)).stops.length, 0);
+    assert.notEqual((await repository.getTripForSync(trip.id)).stops[0].deletedAt, null);
+
+    const remote = await repository.getTripForSync(trip.id);
+    const { ownerId: _ownerId, ...remoteTrip } = remote.trip;
+    await repository.replaceTripFromSync({
+      version: 2,
+      trip: { ...remoteTrip, title: 'Bologna dal cloud', revision: remoteTrip.revision + 1 },
+      days: remote.days,
+      stops: [{ ...remote.stops[0], name: 'Piazza Maggiore' }],
+      lists: remote.lists,
+      listItems: remote.listItems,
+      expenses: remote.expenses,
+      syncedAt: '2026-10-26T12:05:00.000Z',
+    }, accountId);
+
+    const replaced = await repository.getTripForSync(trip.id);
+    assert.equal(replaced.trip.title, 'Bologna dal cloud');
+    assert.equal(replaced.stops[0].name, 'Piazza Maggiore');
+    assert.equal(replaced.trip.ownerId, ownerId);
+    assert.equal((await repository.getSyncState(trip.id)).serverVersion, 2);
+    assert.deepEqual(await repository.listSyncCandidates(accountId), []);
+    assert.deepEqual(
+      (await repository.listSyncCandidates('40000000-0000-4000-8000-000000000002')).map((item) => item.id),
+      [trip.id],
+    );
+  });
+});
+
+test('logistica locale gestisce liste, voci e spese senza mischiare valute', async () => {
+  await withRepository(async (repository) => {
+    const trip = await repository.createTrip({ title: 'Torino' });
+    const packing = await repository.createTripList(trip.id, { title: 'Bagaglio', kind: 'packing' });
+    const checklist = await repository.createTripList(trip.id, { title: 'Prima di partire', kind: 'checklist' });
+    const charger = await repository.createTripListItem(packing.id, 'Caricatore');
+    const passport = await repository.createTripListItem(packing.id, 'Documento');
+    const checkedCharger = await repository.updateTripListItem(charger.id, { checkedAt: '2026-10-26T12:00:00.000Z' });
+    assert.equal(checkedCharger.checkedAt, '2026-10-26T12:00:00.000Z');
+    await repository.updateTripList(packing.id, 'Valigia');
+    await repository.createTripListItem(checklist.id, 'Check-in');
+
+    const euro = await repository.createTripExpense(trip.id, {
+      description: 'Treno', amountMinor: 12450, currency: 'eur', spentAt: '2026-10-26T12:00:00.000Z',
+    });
+    const yen = await repository.createTripExpense(trip.id, {
+      description: 'Metro', amountMinor: 1800, currency: 'JPY',
+    });
+    const updatedEuro = await repository.updateTripExpense(euro.id, { amountMinor: 12700, currency: 'chf' });
+    assert.equal(updatedEuro.amountMinor, 12700);
+    assert.equal(updatedEuro.currency, 'CHF');
+    assert.equal(euro.currency, 'EUR');
+    assert.equal(euro.amountMinor, 12450);
+    await assert.rejects(repository.createTripExpense(trip.id, {
+      description: 'Invalid', amountMinor: 1.5, currency: 'EUR',
+    }), (error) => error instanceof TripValidationError && error.code === 'invalid_expense');
+    await assert.rejects(repository.createTripExpense(trip.id, {
+      description: 'Invalid', amountMinor: 100, currency: 'EURO',
+    }), (error) => error instanceof TripValidationError && error.code === 'invalid_expense');
+
+    const details = await repository.getTrip(trip.id);
+    assert.equal(details.lists.length, 2);
+    assert.equal(details.listItems.find((item) => item.id === charger.id).checkedAt, '2026-10-26T12:00:00.000Z');
+    assert.deepEqual(new Set(details.expenses.map((expense) => expense.currency)), new Set(['CHF', 'JPY']));
+
+    await repository.deleteTripList(packing.id);
+    await repository.deleteTripExpense(yen.id);
+    await repository.deleteTripListItem((await repository.getTrip(trip.id)).listItems
+      .find((item) => item.listId === checklist.id).id);
+    const active = await repository.getTrip(trip.id);
+    assert.equal(active.lists.some((list) => list.id === packing.id), false);
+    assert.equal(active.listItems.some((item) => item.id === passport.id), false);
+    assert.equal(active.expenses.some((expense) => expense.id === yen.id), false);
+    const full = await repository.getTripForSync(trip.id);
+    assert.notEqual(full.lists.find((list) => list.id === packing.id).deletedAt, null);
+    assert.notEqual(full.listItems.find((item) => item.id === passport.id).deletedAt, null);
+    assert.notEqual(full.expenses.find((expense) => expense.id === yen.id).deletedAt, null);
+    assert.equal(full.expenses.find((expense) => expense.id === euro.id).currency, 'CHF');
+
+    await repository.deleteTrip(trip.id);
+    const deletedTrip = await repository.getTripForSync(trip.id);
+    assert.notEqual(deletedTrip.trip.deletedAt, null);
+    assert.ok(deletedTrip.lists.every((list) => list.deletedAt !== null));
+    assert.ok(deletedTrip.listItems.every((item) => item.deletedAt !== null));
+    assert.ok(deletedTrip.expenses.every((expense) => expense.deletedAt !== null));
+  });
+});

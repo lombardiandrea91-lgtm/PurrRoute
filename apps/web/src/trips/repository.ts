@@ -1,8 +1,11 @@
 import { liveQuery } from 'dexie';
-import type { StopCategory, StopLocationSource, StopPlanningState, Trip, TripDay, TripStop } from '@purrroute/domain';
+import type {
+  StopCategory, StopLocationSource, StopPlanningState, Trip, TripDay, TripExpense, TripList, TripListItem, TripStop,
+} from '@purrroute/domain';
+import type { SyncTripResponse } from '@purrroute/contracts';
 import { createStopMarkers } from '@purrroute/domain';
 import { tripDatabase } from './database.ts';
-import type { PurrRouteLocalDatabase } from './database.ts';
+import type { LocalTripSyncState, PurrRouteLocalDatabase } from './database.ts';
 
 const ownerKey = 'localOwnerId';
 const categorySet = new Set<string>([
@@ -20,6 +23,24 @@ export interface TripInput {
 
 export interface DayInput {
   date: string;
+}
+
+export interface TripListInput {
+  title: string;
+  kind: TripList['kind'];
+}
+
+export interface ExpenseInput {
+  description: string;
+  amountMinor: number;
+  currency: string;
+  spentAt?: string | null;
+}
+
+export interface TripLogistics {
+  lists: TripList[];
+  items: TripListItem[];
+  expenses: TripExpense[];
 }
 
 export interface StopInput {
@@ -40,10 +61,13 @@ export interface TripDetails {
   trip: Trip;
   days: TripDay[];
   stops: TripStop[];
+  lists: TripList[];
+  listItems: TripListItem[];
+  expenses: TripExpense[];
 }
 
 export class TripValidationError extends Error {
-  readonly code: 'title_required' | 'invalid_date_range' | 'invalid_date' | 'duplicate_day' | 'invalid_trip' | 'invalid_day' | 'invalid_stop';
+  readonly code: 'title_required' | 'invalid_date_range' | 'invalid_date' | 'duplicate_day' | 'invalid_trip' | 'invalid_day' | 'invalid_stop' | 'invalid_list' | 'invalid_list_item' | 'invalid_expense';
 
   constructor(code: TripValidationError['code']) {
     super(code);
@@ -118,17 +142,58 @@ export class LocalTripRepository {
   }
 
   async getTrip(id: string): Promise<TripDetails | null> {
-    return this.database.transaction('r', this.database.trips, this.database.days, this.database.stops, async () => {
+    return this.database.transaction('r', [this.database.trips, this.database.days, this.database.stops,
+      this.database.lists, this.database.listItems, this.database.expenses], async () => {
       const trip = await this.database.trips.get(id);
       if (!trip || trip.deletedAt !== null) return null;
-      const [days, stops] = await Promise.all([
+      const [days, stops, lists, expenses] = await Promise.all([
         this.database.days.where('tripId').equals(id).toArray(),
         this.database.stops.where('tripId').equals(id).toArray(),
+        this.database.lists.where('tripId').equals(id).toArray(),
+        this.database.expenses.where('tripId').equals(id).toArray(),
       ]);
+      const activeLists = active(lists);
+      const activeListIds = new Set(activeLists.map((list) => list.id));
+      const items = activeListIds.size
+        ? await this.database.listItems.where('listId').anyOf([...activeListIds]).toArray()
+        : [];
       return {
         trip,
         days: active(days).sort((left, right) => left.date.localeCompare(right.date) || left.position - right.position),
         stops: active(stops).sort((left, right) => left.position - right.position || left.name.localeCompare(right.name)),
+        lists: activeLists.sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+        listItems: active(items).filter((item) => activeListIds.has(item.listId))
+          .sort((left, right) => left.position - right.position),
+        expenses: active(expenses).sort((left, right) => (right.spentAt ?? '').localeCompare(left.spentAt ?? '')
+          || right.createdAt.localeCompare(left.createdAt)),
+      };
+    });
+  }
+
+  async getTripForSync(id: string): Promise<TripDetails | null> {
+    return this.database.transaction('r', [this.database.trips, this.database.days, this.database.stops,
+      this.database.lists, this.database.listItems, this.database.expenses], async () => {
+      const trip = await this.database.trips.get(id);
+      if (!trip) return null;
+      const [days, stops, lists, expenses] = await Promise.all([
+        this.database.days.where('tripId').equals(id).toArray(),
+        this.database.stops.where('tripId').equals(id).toArray(),
+        this.database.lists.where('tripId').equals(id).toArray(),
+        this.database.expenses.where('tripId').equals(id).toArray(),
+      ]);
+      const listIds = new Set(lists.map((list) => list.id));
+      const listItems = listIds.size
+        ? await this.database.listItems.where('listId').anyOf([...listIds]).toArray()
+        : [];
+      return {
+        trip,
+        days: days.sort((left, right) => left.date.localeCompare(right.date) || left.position - right.position),
+        stops: stops.sort((left, right) => left.position - right.position || left.name.localeCompare(right.name)),
+        lists: lists.sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+        listItems: listItems.filter((item) => listIds.has(item.listId))
+          .sort((left, right) => left.position - right.position),
+        expenses: expenses.sort((left, right) => (right.spentAt ?? '').localeCompare(left.spentAt ?? '')
+          || right.createdAt.localeCompare(left.createdAt)),
       };
     });
   }
@@ -167,21 +232,191 @@ export class LocalTripRepository {
   }
 
   async deleteTrip(id: string): Promise<void> {
-    await this.database.transaction('rw', this.database.trips, this.database.days, this.database.stops, async () => {
+    await this.database.transaction('rw', [this.database.trips, this.database.days, this.database.stops,
+      this.database.lists, this.database.listItems, this.database.expenses], async () => {
       const trip = await this.database.trips.get(id);
       if (!trip || trip.deletedAt !== null) return;
       const now = timestamp();
       await this.database.trips.put({ ...trip, deletedAt: now, updatedAt: now, revision: trip.revision + 1 });
-      const [days, stops] = await Promise.all([
+      const [days, stops, lists, listItems, expenses] = await Promise.all([
         this.database.days.where('tripId').equals(id).toArray(),
         this.database.stops.where('tripId').equals(id).toArray(),
+        this.database.lists.where('tripId').equals(id).toArray(),
+        this.database.listItems.toArray(),
+        this.database.expenses.where('tripId').equals(id).toArray(),
       ]);
+      const listIds = new Set(lists.map((list) => list.id));
       await this.database.days.bulkPut(days.map((day) => day.deletedAt === null
         ? { ...day, deletedAt: now, updatedAt: now, revision: day.revision + 1 }
         : day));
       await this.database.stops.bulkPut(stops.map((stop) => stop.deletedAt === null
         ? { ...stop, deletedAt: now, updatedAt: now, revision: stop.revision + 1 }
         : stop));
+      await this.database.lists.bulkPut(lists.map((list) => list.deletedAt === null
+        ? { ...list, deletedAt: now, updatedAt: now, revision: list.revision + 1 }
+        : list));
+      await this.database.listItems.bulkPut(listItems.filter((item) => listIds.has(item.listId)).map((item) => item.deletedAt === null
+        ? { ...item, deletedAt: now, updatedAt: now, revision: item.revision + 1 }
+        : item));
+      await this.database.expenses.bulkPut(expenses.map((expense) => expense.deletedAt === null
+        ? { ...expense, deletedAt: now, updatedAt: now, revision: expense.revision + 1 }
+        : expense));
+    });
+  }
+
+  async createTripList(tripId: string, input: TripListInput): Promise<TripList> {
+    const title = input.title.trim();
+    if (!title || title.length > 160 || !['checklist', 'packing'].includes(input.kind)) {
+      throw new TripValidationError('invalid_list');
+    }
+    return this.database.transaction('rw', this.database.trips, this.database.lists, async () => {
+      const trip = await this.database.trips.get(tripId);
+      if (!trip || trip.deletedAt !== null) throw new TripValidationError('invalid_list');
+      const now = timestamp();
+      const list: TripList = {
+        id: crypto.randomUUID(), tripId, title, kind: input.kind,
+        revision: 1, createdAt: now, updatedAt: now, deletedAt: null,
+      };
+      await this.database.lists.add(list);
+      await touchTrip(this.database, tripId);
+      return list;
+    });
+  }
+
+  async updateTripList(id: string, titleInput: string): Promise<TripList> {
+    const title = titleInput.trim();
+    if (!title || title.length > 160) throw new TripValidationError('invalid_list');
+    return this.database.transaction('rw', this.database.trips, this.database.lists, async () => {
+      const list = await this.database.lists.get(id);
+      if (!list || list.deletedAt !== null) throw new TripValidationError('invalid_list');
+      const updated = { ...list, title, revision: list.revision + 1, updatedAt: timestamp() };
+      await this.database.lists.put(updated);
+      await touchTrip(this.database, list.tripId);
+      return updated;
+    });
+  }
+
+  async deleteTripList(id: string): Promise<void> {
+    await this.database.transaction('rw', this.database.trips, this.database.lists, this.database.listItems, async () => {
+      const list = await this.database.lists.get(id);
+      if (!list || list.deletedAt !== null) return;
+      const now = timestamp();
+      await this.database.lists.put({ ...list, deletedAt: now, updatedAt: now, revision: list.revision + 1 });
+      const items = await this.database.listItems.where('listId').equals(id).toArray();
+      await this.database.listItems.bulkPut(items.map((item) => item.deletedAt === null
+        ? { ...item, deletedAt: now, updatedAt: now, revision: item.revision + 1 }
+        : item));
+      await touchTrip(this.database, list.tripId);
+    });
+  }
+
+  async createTripListItem(listId: string, labelInput: string): Promise<TripListItem> {
+    const label = labelInput.trim();
+    if (!label || label.length > 240) throw new TripValidationError('invalid_list_item');
+    return this.database.transaction('rw', this.database.trips, this.database.lists, this.database.listItems, async () => {
+      const list = await this.database.lists.get(listId);
+      if (!list || list.deletedAt !== null) throw new TripValidationError('invalid_list');
+      const items = active(await this.database.listItems.where('listId').equals(listId).toArray());
+      const now = timestamp();
+      const item: TripListItem = {
+        id: crypto.randomUUID(), listId, label, checkedAt: null, position: items.length,
+        revision: 1, createdAt: now, updatedAt: now, deletedAt: null,
+      };
+      await this.database.listItems.add(item);
+      await touchTrip(this.database, list.tripId);
+      return item;
+    });
+  }
+
+  async updateTripListItem(id: string, changes: Partial<Pick<TripListItem, 'label' | 'checkedAt'>>): Promise<TripListItem> {
+    const label = changes.label?.trim();
+    if (changes.label !== undefined && (!label || label.length > 240)) {
+      throw new TripValidationError('invalid_list_item');
+    }
+    if (changes.checkedAt && Number.isNaN(Date.parse(changes.checkedAt))) {
+      throw new TripValidationError('invalid_list_item');
+    }
+    return this.database.transaction('rw', this.database.trips, this.database.lists, this.database.listItems, async () => {
+      const item = await this.database.listItems.get(id);
+      if (!item || item.deletedAt !== null) throw new TripValidationError('invalid_list_item');
+      const list = await this.database.lists.get(item.listId);
+      if (!list || list.deletedAt !== null) throw new TripValidationError('invalid_list');
+      const updated = { ...item, ...changes, ...(label ? { label } : {}), revision: item.revision + 1, updatedAt: timestamp() };
+      await this.database.listItems.put(updated);
+      await touchTrip(this.database, list.tripId);
+      return updated;
+    });
+  }
+
+  async deleteTripListItem(id: string): Promise<void> {
+    await this.database.transaction('rw', this.database.trips, this.database.lists, this.database.listItems, async () => {
+      const item = await this.database.listItems.get(id);
+      if (!item || item.deletedAt !== null) return;
+      const list = await this.database.lists.get(item.listId);
+      if (!list || list.deletedAt !== null) return;
+      const now = timestamp();
+      await this.database.listItems.put({ ...item, deletedAt: now, updatedAt: now, revision: item.revision + 1 });
+      await touchTrip(this.database, list.tripId);
+    });
+  }
+
+  async createTripExpense(tripId: string, input: ExpenseInput): Promise<TripExpense> {
+    const description = input.description.trim();
+    const currency = input.currency.trim().toUpperCase();
+    if (!description || description.length > 240 || !Number.isSafeInteger(input.amountMinor)
+      || input.amountMinor < 0 || !/^[A-Z]{3}$/.test(currency)
+      || (input.spentAt && Number.isNaN(Date.parse(input.spentAt)))) {
+      throw new TripValidationError('invalid_expense');
+    }
+    return this.database.transaction('rw', this.database.trips, this.database.expenses, async () => {
+      const trip = await this.database.trips.get(tripId);
+      if (!trip || trip.deletedAt !== null) throw new TripValidationError('invalid_expense');
+      const now = timestamp();
+      const expense: TripExpense = {
+        id: crypto.randomUUID(), tripId, description, amountMinor: input.amountMinor, currency,
+        spentAt: input.spentAt ?? null, paidByUserId: null,
+        revision: 1, createdAt: now, updatedAt: now, deletedAt: null,
+      };
+      await this.database.expenses.add(expense);
+      await touchTrip(this.database, tripId);
+      return expense;
+    });
+  }
+
+  async updateTripExpense(
+    id: string,
+    changes: Partial<Pick<TripExpense, 'description' | 'amountMinor' | 'currency' | 'spentAt'>>,
+  ): Promise<TripExpense> {
+    const description = changes.description?.trim();
+    const currency = changes.currency?.trim().toUpperCase();
+    if ((changes.description !== undefined && (!description || description.length > 240))
+      || (changes.amountMinor !== undefined && (!Number.isSafeInteger(changes.amountMinor) || changes.amountMinor < 0))
+      || (currency !== undefined && !/^[A-Z]{3}$/.test(currency))
+      || (changes.spentAt && Number.isNaN(Date.parse(changes.spentAt)))) {
+      throw new TripValidationError('invalid_expense');
+    }
+    return this.database.transaction('rw', this.database.trips, this.database.expenses, async () => {
+      const expense = await this.database.expenses.get(id);
+      if (!expense || expense.deletedAt !== null) throw new TripValidationError('invalid_expense');
+      const updated = {
+        ...expense, ...changes,
+        ...(description ? { description } : {}),
+        ...(currency ? { currency } : {}),
+        revision: expense.revision + 1, updatedAt: timestamp(),
+      };
+      await this.database.expenses.put(updated);
+      await touchTrip(this.database, expense.tripId);
+      return updated;
+    });
+  }
+
+  async deleteTripExpense(id: string): Promise<void> {
+    await this.database.transaction('rw', this.database.trips, this.database.expenses, async () => {
+      const expense = await this.database.expenses.get(id);
+      if (!expense || expense.deletedAt !== null) return;
+      const now = timestamp();
+      await this.database.expenses.put({ ...expense, deletedAt: now, updatedAt: now, revision: expense.revision + 1 });
+      await touchTrip(this.database, expense.tripId);
     });
   }
 
@@ -362,5 +597,70 @@ export class LocalTripRepository {
         : [{ ...item, position, updatedAt: now, revision: item.revision + 1 }]));
       await touchTrip(this.database, tripId);
     });
+  }
+
+  async listSyncCandidates(accountId: string): Promise<Trip[]> {
+    const [trips, states] = await Promise.all([
+      this.database.trips.toArray(),
+      this.database.syncStates.toArray(),
+    ]);
+    const statesByTrip = new Map(states.map((state) => [state.id, state]));
+    return trips.filter((trip) => {
+      const state = statesByTrip.get(trip.id);
+      return !state || state.accountId !== accountId || state.localRevision !== trip.revision;
+    }).sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  }
+
+  getSyncState(tripId: string): Promise<LocalTripSyncState | undefined> {
+    return this.database.syncStates.get(tripId);
+  }
+
+  async markTripSynced(
+    tripId: string,
+    accountId: string,
+    serverVersion: number,
+    localRevision: number,
+    syncedAt: string,
+  ): Promise<void> {
+    await this.database.syncStates.put({
+      id: tripId, accountId, serverVersion, localRevision, syncedAt,
+    });
+  }
+
+  async replaceTripFromSync(snapshot: SyncTripResponse, accountId: string): Promise<void> {
+    const tripId = snapshot.trip.id;
+    await this.database.transaction('rw', [
+      this.database.trips, this.database.days, this.database.stops, this.database.lists,
+      this.database.listItems, this.database.expenses, this.database.metadata, this.database.syncStates,
+    ], async () => {
+        const [existing, localOwner] = await Promise.all([
+          this.database.trips.get(tripId),
+          this.database.metadata.get(ownerKey),
+        ]);
+        let ownerId = existing?.ownerId ?? localOwner?.value;
+        if (!ownerId) {
+          ownerId = crypto.randomUUID();
+          await this.database.metadata.put({ id: ownerKey, value: ownerId });
+        }
+        await this.database.days.where('tripId').equals(tripId).delete();
+        await this.database.stops.where('tripId').equals(tripId).delete();
+        const existingLists = await this.database.lists.where('tripId').equals(tripId).toArray();
+        if (existingLists.length) await this.database.listItems.where('listId').anyOf(existingLists.map((list) => list.id)).delete();
+        await this.database.lists.where('tripId').equals(tripId).delete();
+        await this.database.expenses.where('tripId').equals(tripId).delete();
+        await this.database.trips.put({ ...snapshot.trip, ownerId });
+        if (snapshot.days.length) await this.database.days.bulkPut(snapshot.days);
+        if (snapshot.stops.length) await this.database.stops.bulkPut(snapshot.stops);
+        if (snapshot.lists.length) await this.database.lists.bulkPut(snapshot.lists);
+        if (snapshot.listItems.length) await this.database.listItems.bulkPut(snapshot.listItems);
+        if (snapshot.expenses.length) await this.database.expenses.bulkPut(snapshot.expenses);
+        await this.database.syncStates.put({
+          id: tripId,
+          accountId,
+          serverVersion: snapshot.version,
+          localRevision: snapshot.trip.revision,
+          syncedAt: snapshot.syncedAt,
+        });
+      });
   }
 }

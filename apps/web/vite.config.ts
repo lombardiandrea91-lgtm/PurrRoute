@@ -35,6 +35,15 @@ export default defineConfig({
       navigateFallback: '/index.html',
       navigateFallbackDenylist: [/^\/api(?:\/|$)/],
       cleanupOutdatedCaches: true,
+      runtimeCaching: [{
+        urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/api/maps/tiles/'),
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'purrroute-map-tiles',
+          expiration: { maxEntries: 3200, maxAgeSeconds: 30 * 24 * 60 * 60, purgeOnQuotaError: true },
+          cacheableResponse: { statuses: [200] },
+        },
+      }],
     },
   })],
 })

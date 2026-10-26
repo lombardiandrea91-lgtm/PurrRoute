@@ -1,14 +1,14 @@
 # ADR-0017: Renderer mappa e servizi geospaziali
 
-Stato: renderer e tile online selezionati; geocoding/routing opt-in; offline rinviato.
+Stato: renderer/tile online e cache offline limitata selezionati; geocoding/routing opt-in.
 Fonti ufficiali ricontrollate: 2026-10-26.
 
 ## Decisione
 
-Usare MapLibre GL JS 6.16.0 (BSD-3-Clause) come renderer. Tile/style online
-predefiniti da OpenFreeMap, senza chiave o proxy nostro. Il service worker non
-memorizza tile/style/glyph; attribuzione OpenFreeMap, OpenMapTiles e OpenStreetMap
-resta sempre visibile tramite MapLibre e link provider.
+Usare MapLibre GL JS 6.16.0 (BSD-3-Clause) come renderer. OpenFreeMap è il provider
+tile senza chiave; il server espone proxy same-origin con User-Agent applicativo per
+supportare download offline conformi. Il service worker conserva solo le route tile
+dedicate; attribuzione OpenFreeMap, OpenMapTiles e OpenStreetMap resta visibile.
 
 La mappa legge soltanto tappe del viaggio locale selezionato. Tutte le coordinate
 sono opzionali; selezionare una tappa dalla lista centra la mappa e viceversa. Il
@@ -40,9 +40,9 @@ richiesta. Nessun SLA e servizio revocabile. CDN Cloudflare possibile; regione d
 non garantita. Access logs senza IP per default, conservati 7 giorni; error logs che
 possono includere IP/URL fino a 7 giorni; log IP temporanei in incidenti fino a 30
 giorni. ToS richiede che l'integratore abbia almeno 18 anni e capacità legale:
-verifica necessaria prima del rilascio pubblico. Nessun offline in questo passo;
-futuri download limitati a 3.000 tile o 50 MB per richiesta, massimo 4 richieste
-parallele e User-Agent applicazione univoco. Copertura/qualità Italia e continuità
+verifica necessaria prima del rilascio pubblico. Il passo 7 implementa download
+limitati a 3.000 tile o 50 MB, massimo 4 richieste parallele e User-Agent univoco.
+Copertura/qualità Italia e continuità
 futura del servizio: non verificato; smoke test solo su tile sintetici di Roma.
 
 ### LocationIQ
@@ -73,14 +73,14 @@ non integrato.
 
 ## Conseguenze e verifiche
 
-Con rete assente la lista tappe resta utilizzabile; basemap, geocoding e routing non
-sono garantiti offline. Il public tile service può cambiare o interrompersi; nessun
-SLA e nessuna cache offline sono promessi. La soluzione road route resta disattivata
-senza opt-in/provider; il collegamento schematico non attribuisce strade o tempi.
+Con rete assente la lista tappe resta utilizzabile; una sola area mappa selezionata
+può restare in Cache Storage entro limiti LRU/30 giorni, non è un backup. Geocoding
+e routing non sono garantiti offline. Il public tile service può cambiare o interrompersi;
+nessun SLA è promesso. La soluzione road route resta disattivata senza opt-in/provider;
+il collegamento schematico non attribuisce strade o tempi.
 
-Verificato: server tile/style OpenFreeMap risponde 200 per 26 richieste browser di
-smoke test con dati sintetici; pin, cluster, click manuale, selezione lista↔mappa e
-viewport desktop/mobile controllati. Test automatizzati coprono schema API, CSRF,
-Origin, quota, timeout, cache e adapter con fetch mock. Nessun benchmark di copertura
-Italia, richiesta geocoding/routing live, test offline mappe o test di lettore schermo
-eseguito.
+Verificato: 286 richieste tile browser HTTP 200 con dati sintetici; download offline
+entro i limiti, cache worker e reload offline con tappa visibile. Test automatici
+coprono proxy path allowlist, versioni TileJSON, limiti tile e sync. Nessun benchmark
+di copertura Italia, richiesta geocoding/routing live o test di lettore di schermo
+eseguito. Dettagli offline e sync: [ADR-0018](0018-offline-maps-and-sync.md).

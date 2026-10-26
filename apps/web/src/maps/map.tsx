@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { LngLatBounds, Map as MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'maplibre-gl';
-import type { GeoJSONSource } from 'maplibre-gl';
+import type { GeoJSONSource, StyleSpecification } from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { renderSvg } from '@purrroute/design-system';
@@ -19,6 +19,8 @@ import {
   openFreeMapTiles,
 } from './adapters.ts';
 import type { Coordinate, PlaceCandidate, RoadRoute, RouteProfile } from './adapters.ts';
+import { createOfflineTilePlan, downloadOfflineTilePlan } from './offline.ts';
+import type { OfflineBounds } from './offline.ts';
 import './map.css';
 
 setWorkerUrl(maplibreWorkerUrl);
@@ -149,6 +151,7 @@ function clusterStops(map: MapLibreMap, stops: TripStop[]): TripStop[][] {
 
 function MapCanvas({
   tripId,
+  tripDataReady,
   stops,
   selectedStopId,
   locale,
@@ -159,8 +162,11 @@ function MapCanvas({
   onSelectStop,
   onPickCoordinate,
   onStartPick,
+  onDownloadArea,
+  offlineProgress,
 }: {
   tripId: string;
+  tripDataReady: boolean;
   stops: TripStop[];
   selectedStopId: string | null;
   locale: Locale;
@@ -171,10 +177,13 @@ function MapCanvas({
   onSelectStop(stopId: string): void;
   onPickCoordinate(coordinate: Coordinate): void;
   onStartPick(): void;
+  onDownloadArea(bounds: OfflineBounds, zoom: number): void;
+  offlineProgress: string;
 }) {
   const translate = (key: MessageKey) => messages[locale][key];
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const initialFitTripRef = useRef('');
   const markerRefs = useRef<Marker[]>([]);
   const currentLocationMarkerRef = useRef<Marker | null>(null);
   const mapLoadedRef = useRef(false);
@@ -184,62 +193,80 @@ function MapCanvas({
   const [mapFailure, setMapFailure] = useState(false);
   const [locateFailure, setLocateFailure] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [tileProxyReady, setTileProxyReady] = useState(false);
 
   useEffect(() => { onSelectRef.current = onSelectStop; }, [onSelectStop]);
   useEffect(() => { onPickRef.current = onPickCoordinate; }, [onPickCoordinate]);
 
   useEffect(() => {
     if (!containerRef.current) return undefined;
-    const map = new MapLibreMap({
-      container: containerRef.current,
-      style: openFreeMapTiles.styleUrl,
-      center: [12.5, 42.5],
-      zoom: 5.2,
-      minZoom: 3,
-      maxZoom: 19,
-      cooperativeGestures: true,
-      trackResize: true,
-      maxTileCacheSize: 64,
-    });
-    mapRef.current = map;
-    const loadedTimeout = window.setTimeout(() => {
-      if (!mapLoadedRef.current) setMapFailure(true);
-    }, 12_000);
-    map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
-    map.on('load', () => {
-      window.clearTimeout(loadedTimeout);
-      mapLoadedRef.current = true;
-      setMapReady(true);
-      setMapLoaded(true);
-      setMapFailure(false);
-      map.addSource('trip-route-schematic', { type: 'geojson', data: createSchematicRoute([], '') });
-      map.addLayer({
-        id: 'trip-route-schematic-line',
-        type: 'line',
-        source: 'trip-route-schematic',
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#12B5A3', 'line-width': 4, 'line-dasharray': [2, 2], 'line-opacity': 0.9 },
+    let map: MapLibreMap | null = null;
+    let cancelled = false;
+    let loadedTimeout: number | undefined;
+    const initialize = async () => {
+      let style: string | StyleSpecification = openFreeMapTiles.styleUrl;
+      try {
+        const response = await fetch('/api/maps/tiles/style.json');
+        if (response.ok) {
+          style = await response.json() as StyleSpecification;
+          setTileProxyReady(true);
+        }
+      } catch { setTileProxyReady(false); }
+      if (cancelled || !containerRef.current) return;
+      const activeMap = new MapLibreMap({
+        container: containerRef.current,
+        style,
+        center: [12.5, 42.5],
+        zoom: 5.2,
+        minZoom: 3,
+        maxZoom: 19,
+        cooperativeGestures: true,
+        trackResize: true,
+        maxTileCacheSize: 64,
       });
-      map.addSource('trip-route-road', { type: 'geojson', data: emptyRoadFeatureCollection() });
-      map.addLayer({
-        id: 'trip-route-road-line',
-        type: 'line',
-        source: 'trip-route-road',
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': '#076A61', 'line-width': 5, 'line-opacity': 0.94 },
+      map = activeMap;
+      mapRef.current = activeMap;
+      loadedTimeout = window.setTimeout(() => {
+        if (!mapLoadedRef.current) setMapFailure(true);
+      }, 12_000);
+      activeMap.addControl(new NavigationControl({ showCompass: false }), 'top-right');
+      activeMap.on('load', () => {
+        if (loadedTimeout !== undefined) window.clearTimeout(loadedTimeout);
+        mapLoadedRef.current = true;
+        setMapReady(true);
+        setMapLoaded(true);
+        setMapFailure(false);
+        activeMap.addSource('trip-route-schematic', { type: 'geojson', data: createSchematicRoute([], '') });
+        activeMap.addLayer({
+          id: 'trip-route-schematic-line',
+          type: 'line',
+          source: 'trip-route-schematic',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#12B5A3', 'line-width': 4, 'line-dasharray': [2, 2], 'line-opacity': 0.9 },
+        });
+        activeMap.addSource('trip-route-road', { type: 'geojson', data: emptyRoadFeatureCollection() });
+        activeMap.addLayer({
+          id: 'trip-route-road-line',
+          type: 'line',
+          source: 'trip-route-road',
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#076A61', 'line-width': 5, 'line-opacity': 0.94 },
+        });
       });
-    });
-    map.on('error', () => {
-      if (!mapLoadedRef.current) setMapFailure(true);
-    });
+      activeMap.on('error', () => {
+        if (!mapLoadedRef.current) setMapFailure(true);
+      });
+    };
+    void initialize();
     return () => {
-      window.clearTimeout(loadedTimeout);
+      cancelled = true;
+      if (loadedTimeout !== undefined) window.clearTimeout(loadedTimeout);
       mapLoadedRef.current = false;
       currentLocationMarkerRef.current?.remove();
       currentLocationMarkerRef.current = null;
       markerRefs.current.forEach((marker) => marker.remove());
       markerRefs.current = [];
-      map.remove();
+      map?.remove();
       mapRef.current = null;
       setMapReady(false);
       setMapLoaded(false);
@@ -323,7 +350,8 @@ function MapCanvas({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !mapReady) return;
+    if (!map || !mapReady || !tripDataReady || initialFitTripRef.current === tripId) return;
+    initialFitTripRef.current = tripId;
     const locatedStops = stops.flatMap((stop) => {
       const coordinate = coordinatePair(stop);
       return coordinate ? [coordinate] : [];
@@ -336,7 +364,7 @@ function MapCanvas({
         new LngLatBounds(firstLocatedStop, firstLocatedStop));
       map.fitBounds(bounds, { padding: 72, maxZoom: 13, duration: 450 });
     } else map.flyTo({ center: [12.5, 42.5], zoom: 5.2, duration: 300 });
-  }, [tripId, mapReady]);
+  }, [tripId, mapReady, stops, tripDataReady]);
 
   const locate = () => {
     setLocateFailure(false);
@@ -356,11 +384,21 @@ function MapCanvas({
     }, () => setLocateFailure(true), { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 });
   };
 
+  const canDownload = tileProxyReady && mapReady && 'serviceWorker' in navigator
+    && Boolean(navigator.serviceWorker.controller);
+
   return <div className={`map-canvas-wrap${pickMode ? ' is-picking' : ''}`}>
     <div className="map-canvas" ref={containerRef} role="region" aria-label={translate('mapCanvas')} />
     <div className="map-canvas-actions">
       <button className="map-tool-button" type="button" disabled={!canAddStops || !mapReady} onClick={onStartPick}><Icon id="ui-aggiungi" />{translate('mapPickNew')}</button>
       <button className="map-tool-button" type="button" disabled={!mapReady} onClick={locate}><Icon id="ui-posizione" />{translate('youAreHere')}</button>
+      <button className="map-tool-button" type="button" disabled={!canDownload || Boolean(offlineProgress)} onClick={() => {
+        const bounds = mapRef.current?.getBounds().toArray();
+        const zoom = mapRef.current?.getZoom();
+        if (bounds && zoom !== undefined) {
+          onDownloadArea([bounds[0][0], bounds[0][1], bounds[1][0], bounds[1][1]], zoom);
+        }
+      }}><Icon id="ui-offline" />{offlineProgress || translate('mapDownloadArea')}</button>
     </div>
     {pickMode && <p className="map-pick-instruction" role="status">{translate('pickMapPointHelp')}</p>}
     {!mapReady && !mapFailure && <div className="map-loading" role="status">{translate('mapLoading')}</div>}
@@ -404,6 +442,9 @@ export function MapWorkspace({ locale }: MapWorkspaceProps) {
   const [serviceError, setServiceError] = useState('');
   const [mutationError, setMutationError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [offlineProgress, setOfflineProgress] = useState('');
+  const [offlineNotice, setOfflineNotice] = useState('');
+  const [offlineFailure, setOfflineFailure] = useState('');
 
   useEffect(() => repository.observeTrips((value) => {
     setTrips(value);
@@ -550,6 +591,37 @@ export function MapWorkspace({ locale }: MapWorkspaceProps) {
     }
   };
 
+  const downloadArea = async (bounds: OfflineBounds, zoom: number) => {
+    setOfflineFailure(''); setOfflineNotice('');
+    try {
+      const response = await fetch('/api/maps/tiles/style.json');
+      if (!response.ok) throw new Error('offline_download_failed');
+      const style: unknown = await response.json();
+      const tileJsonResponse = await fetch('/api/maps/tiles/planet.json');
+      if (!tileJsonResponse.ok) throw new Error('offline_download_failed');
+      const tileJson = await tileJsonResponse.json() as { tiles?: unknown };
+      const vectorTileTemplate = Array.isArray(tileJson.tiles)
+        ? tileJson.tiles.find((url): url is string => typeof url === 'string'
+          && url.startsWith('/api/maps/tiles/planet/'))
+        : undefined;
+      if (!vectorTileTemplate) throw new Error('offline_download_failed');
+      const plan = createOfflineTilePlan(bounds, zoom, style, vectorTileTemplate);
+      if (!plan) throw new Error('offline_area_too_large');
+      const confirmation = translate('confirmMapDownload').replace('{count}', String(plan.tileCount));
+      if (!window.confirm(confirmation)) return;
+      await downloadOfflineTilePlan(plan, (completed, total) => {
+        setOfflineProgress(`${translate('mapDownloadProgress')} ${completed}/${total}`);
+      });
+      setOfflineNotice(translate('mapDownloadComplete'));
+    } catch (error) {
+      setOfflineFailure(error instanceof Error && error.message === 'offline_download_too_large'
+        ? translate('mapDownloadTooLarge')
+        : error instanceof Error && error.message === 'offline_area_too_large'
+          ? translate('mapDownloadAreaTooLarge')
+          : translate('mapDownloadFailed'));
+    } finally { setOfflineProgress(''); }
+  };
+
   return <section className="map-workspace">
     <header className="map-heading">
       <h1 tabIndex={-1}>{translate('map')}</h1>
@@ -565,6 +637,7 @@ export function MapWorkspace({ locale }: MapWorkspaceProps) {
       <div className="map-main-panel">
         <MapCanvas
           tripId={tripId}
+          tripDataReady={!tripId || details !== null}
           stops={dayStops}
           selectedStopId={selectedStopId}
           locale={locale}
@@ -579,6 +652,8 @@ export function MapWorkspace({ locale }: MapWorkspaceProps) {
             setPendingCoordinate(null);
             setPickMode(true);
           }}
+          onDownloadArea={(bounds, zoom) => void downloadArea(bounds, zoom)}
+          offlineProgress={offlineProgress}
         />
       </div>
 
@@ -640,6 +715,8 @@ export function MapWorkspace({ locale }: MapWorkspaceProps) {
           </div>}
           {serviceError && <p className="map-error" role="alert">{serviceError}</p>}
           {mutationError && <p className="map-error" role="alert">{mutationError}</p>}
+          {offlineNotice && <p className="map-privacy-note" role="status">{offlineNotice}</p>}
+          {offlineFailure && <p className="map-error" role="alert">{offlineFailure}</p>}
 
           {pendingCoordinate && <form className="map-pick-form" onSubmit={(event) => void addMapStop(event)}>
             <h3>{translate('mapNewPin')}</h3>

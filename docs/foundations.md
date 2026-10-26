@@ -69,7 +69,7 @@ Accenti nel kit: teal #12B5A3 e arancio #FFB067. Il contrasto AA non e' attestat
 | Accessibilita' | Test contrasto e axe locale passati; verifica completa con tecnologie assistive: non verificato |
 | Versioni dipendenze | Toolchain API diretta verificata in ADR-0015; audit transitive e runtime hosting produzione ancora da completare |
 | Preferito e visitato | Risolto al passo 4: pianificazione required/optional separata da preferito e visitedAt, ADR-0014 |
-| Conflitti sync | Politica da definire al passo 7, prevedendo i contratti fin dai passi 4 e 5 |
+| Conflitti sync | Risolto al passo 7 in ADR-0018: versione server per viaggio, 409 e scelta esplicita cloud/device; nessun merge automatico |
 | Email produzione | Provider, dominio mittente, quote e deliverability: non verificato; sink solo locale al passo 4 |
 | Google Play | Costi e requisiti correnti: non verificato; passo 13 |
 | Repository remoto | Visibilita', accesso e contenuti: non verificato; prima di qualsiasi push |
@@ -109,8 +109,9 @@ Nessuna promessa di zero retention senza verifica delle condizioni effettive.
 13. Pacchetto Google Play.
 14. Rifinitura e rilascio.
 
-I contratti per local-first precedono la sync completa; autenticazione e permessi
-server non possono attendere il passo collaborazione. Ogni passo termina con
+I contratti per local-first precedono la sync completa; il passo 7 implementa il
+primo flusso manuale owner-only. Autenticazione e permessi server non possono
+attendere il passo collaborazione. Ogni passo termina con
 verifica e resoconto. Dal 2026-10-26 l'utente autorizza il proseguimento senza OK
 intermedi, senza deroghe agli altri vincoli. Il confronto servizi e' documentato
 nella [ricerca del passo 1](service-selection.md).

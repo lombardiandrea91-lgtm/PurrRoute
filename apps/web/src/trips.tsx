@@ -8,6 +8,9 @@ import type { MessageKey } from './messages.ts';
 import type { Locale } from './preferences.ts';
 import { LocalTripRepository, TripValidationError } from './trips/repository.ts';
 import type { TripInput } from './trips/repository.ts';
+import { TripSyncPanel } from './sync/trip-sync-panel.tsx';
+import { RemoteTripsPanel } from './sync/remote-trips-panel.tsx';
+import { TripLogistics } from './trips/logistics.tsx';
 
 const repository = new LocalTripRepository();
 
@@ -58,6 +61,9 @@ function errorMessage(error: unknown, translate: (key: MessageKey) => string): s
       invalid_trip: 'invalidTrip',
       invalid_day: 'invalidDay',
       invalid_stop: 'invalidStop',
+      invalid_list: 'invalidList',
+      invalid_list_item: 'invalidListItem',
+      invalid_expense: 'invalidExpense',
     };
     return translate(keys[error.code]);
   }
@@ -368,6 +374,7 @@ export function TripsWorkspace({ locale, cat }: { locale: Locale; cat: 'rosso' |
           <span>{trip.startsOn ? dateLabel(trip.startsOn, locale) : translate('noDates')}</span>
         </button>)}
       </div>
+      <RemoteTripsPanel trips={trips} locale={locale} />
     </section>
 
     <section className={`trip-detail-panel ${selectedTrip ? '' : 'mobile-hidden'}`}>
@@ -388,6 +395,7 @@ export function TripsWorkspace({ locale, cat }: { locale: Locale; cat: 'rosso' |
         {mutationFailure && <p className="trip-error" role="alert">{mutationFailure}</p>}
         {!details && !loadFailure && <p className="muted" role="status">{translate('tripLoading')}</p>}
         {details && <>
+          <TripSyncPanel trip={details} locale={locale} />
           <section className="trip-section" aria-labelledby="trip-days-heading">
             <div className="trip-section-heading">
               <h2 id="trip-days-heading">{translate('days')}</h2>
@@ -448,6 +456,7 @@ export function TripsWorkspace({ locale, cat }: { locale: Locale; cat: 'rosso' |
               />)}
             </div>
           </section>
+          <TripLogistics details={details} locale={locale} />
         </>}
       </>}
     </section>

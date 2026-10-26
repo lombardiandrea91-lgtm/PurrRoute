@@ -162,10 +162,11 @@ R2 non viene attivato con il vincolo zero addebiti finche' non si dimostra un
 limite rigido, compresi accessi a URL firmati. Nessun bucket creato.
 
 Fonte accessi: [Supabase Storage security](https://supabase.com/docs/guides/storage/security/access-control).
-Il nostro backend deve validare utente/viaggio prima di firmare URL brevi. Nel
-passo 8 progettare cifratura applicativa per documenti sensibili e gestione chiavi,
-senza equiparare cifratura disco provider a cifratura del documento. Non usare
-cache CDN pubblica per documenti; backup file non incluso nel backup SQL.
+Il nostro backend deve validare utente/viaggio prima di firmare URL brevi. ADR-0019
+definisce l'envelope encryption client-side come direzione, ma lascia aperti recovery,
+rotazione, trasferimento chiavi e collaborazione: documenti/storage non sono implementati
+né autorizzati fino a questi gate. Non equiparare cifratura disco provider a cifratura
+del documento. Non usare cache CDN pubblica; backup file non incluso nel backup SQL.
 
 ## Email
 
@@ -251,11 +252,12 @@ avere almeno 18 anni e capacità legale di accettare i termini: requisito da con
 prima del rilascio pubblico. Offline: massimo 3.000 tile o 50 MB per download, massimo
 4 richieste parallele e User-Agent univoco; dimensioni superiori richiedono accordo.
 
-Decisione passo 6: usare l'istanza pubblica OpenFreeMap solo per tile online tramite
-MapLibre. Nessun tile viene precache/runtime-cache dal service worker; l'archivio
-manuale dell'itinerario resta disponibile quando il provider non risponde. I limiti
-offline non vengono implementati qui e restano al passo 7. L'istanza usa dati OSM/
-OpenMapTiles; mantenere visibile l'attribuzione e verificare le licenze delle fonti.
+Decisione passo 6: usare l'istanza pubblica OpenFreeMap per tile online tramite
+MapLibre. Il passo 7 aggiunge proxy same-origin con User-Agent applicativo e download
+offline limitato; il service worker cachea solo le risorse tile proxate. L'archivio
+manuale resta disponibile quando provider/API non rispondono. Limiti e trade-off in
+[ADR-0018](adr/0018-offline-maps-and-sync.md). Mantenere attribuzione visibile e
+verificare le licenze delle fonti.
 Qualità specifica Italia e disponibilità futura: non verificato; il test browser ha
 caricato tile e glyph di una vista sintetica di Roma, senza benchmark territoriale.
 
