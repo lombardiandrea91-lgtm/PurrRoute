@@ -63,9 +63,9 @@ Accenti nel kit: teal #12B5A3 e arancio #FFB067. Il contrasto AA non e' attestat
 | --- | --- |
 | Hosting gestito UE a costo zero | non verificato; selezione dopo confronto delle condizioni |
 | Provider esterni | Prezzi, quote, uso, cache, archiviazione e regione: non verificato; passo 1 |
-| Font self-hosted | Licenza e manutenzione: non verificato; prima dell'adozione al passo 2 |
-| Icone UI | Il testo dichiara 24; conteggio completo non verificato nella lettura iniziale, da estrarre al passo 2 |
-| Accessibilita' | Contrasto, tastiera e tecnologie assistive: non verificato; passi 2 e 3 |
+| Font self-hosted | Verificato al passo 2: OFL 1.1, font originale locale e licenza allegata |
+| Icone UI | Verificato al passo 2: 24 icone con estrazione e test automatici |
+| Accessibilita' | Test contrasto e axe locale passati; verifica completa con tecnologie assistive: non verificato |
 | Versioni dipendenze | Compatibilita', transitive e supporto delle versioni scelte: non verificato; prima dell'installazione |
 | Preferito e visitato | Flag indipendenti o stati: decisione al passo 4 |
 | Conflitti sync | Politica da definire al passo 7, prevedendo i contratti fin dai passi 4 e 5 |

@@ -8,3 +8,5 @@ playwright-report/
 !.env.example
 *.log
 .tsupgrader/runtime-validation/*-result.json
+/apps/web/public/app-assets/
+/apps/web/public/licenses/

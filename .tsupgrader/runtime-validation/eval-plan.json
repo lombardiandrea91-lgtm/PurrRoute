@@ -1,5 +1,5 @@
 {
-  "projectType": "library",
+  "projectType": "webapp",
   "setup": [{ "command": "npm", "args": ["ci"] }],
   "assertions": [
     {
@@ -28,6 +28,34 @@
       "verificationMethod": "test-results",
       "expected": "0",
       "timeoutSeconds": 120
+    },
+    {
+      "name": "web-build",
+      "kind": "process",
+      "command": "npm",
+      "args": ["run", "build"],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 120
+    },
+    {
+      "name": "pwa-build-contract",
+      "kind": "process",
+      "command": "npm",
+      "args": ["run", "test:pwa"],
+      "verificationMethod": "exit-code",
+      "expected": "0",
+      "timeoutSeconds": 60
+    },
+    {
+      "name": "web-shell-http-fallback",
+      "kind": "http-probe",
+      "startCommand": "npm",
+      "startArgs": ["run", "preview", "--workspace", "@purrroute/web", "--", "--host", "127.0.0.1", "--port", "4173", "--strictPort"],
+      "url": "http://127.0.0.1:4173/settings",
+      "verificationMethod": "http-status",
+      "expected": "200",
+      "timeoutSeconds": 60
     },
     {
       "name": "design-preview-browser",

@@ -10,13 +10,25 @@
   ],
   "scripts": {
     "assets": "node scripts/build-design.mjs",
+    "predev": "node scripts/prepare-web.mjs",
+    "dev": "npm run dev --workspace @purrroute/web",
+    "prebuild": "node scripts/prepare-web.mjs",
+    "build": "npm run build --workspace @purrroute/web",
+    "preview": "npm run preview --workspace @purrroute/web",
     "test": "node --test scripts/*.test.mjs",
     "check": "tsc --noEmit",
-    "test:design": "node scripts/check-design-browser.mjs"
+    "test:design": "node scripts/check-design-browser.mjs",
+    "test:pwa": "node scripts/check-pwa-build.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.64.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
     "sharp": "0.35.5",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vite-plugin-pwa": "2.0.0"
   }
 }

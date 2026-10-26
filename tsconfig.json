@@ -9,7 +9,9 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "types": ["vite/client", "vite-plugin-pwa/client"],
     "skipLibCheck": true
   },
-  "include": ["packages/design-system/src/**/*.ts"]
+  "include": ["packages/design-system/src/**/*.ts", "apps/web/src/**/*.ts", "apps/web/src/**/*.tsx"]
 }

@@ -6,8 +6,10 @@ Codice proprietario. App pubblica gratuita, inizialmente per circa 10 utenti att
 
 ## Stato
 
-Passi 0, 1 e 2 completati; ricerca servizi con raccomandazioni condizionate.
-Design system tipizzato e asset generati; nessuna integrazione remota attivata.
+Passi 0, 1 e 2 completati. Shell del passo 3 implementata e verificata localmente;
+installazione Android reale e HTTPS pubblico ancora da verificare.
+Nessuna integrazione remota attivata; creazione viaggi, account e sync non ancora
+implementati. La schermata viaggi e' uno stato vuoto reale, non un MVP completo.
 Dal 2026-10-26 l'utente autorizza a procedere senza approvazioni intermedie,
 preservando ordine dei passi, budget e vincoli.
 
@@ -16,6 +18,7 @@ preservando ordine dei passi, budget e vincoli.
 - [Ricerca servizi esterni](docs/service-selection.md)
 - [Design system e verifiche](docs/design-system.md)
 - [Anteprima componenti](packages/design-system/preview.html)
+- [Shell PWA: avvio e verifiche](docs/pwa-shell.md)
 
 ## Decisioni architetturali
 
@@ -33,6 +36,7 @@ preservando ordine dei passi, budget e vincoli.
 | [0010](docs/adr/0010-pwa-twa.md) | PWA prima, TWA dopo |
 | [0011](docs/adr/0011-service-shortlist.md) | Shortlist servizi e blocchi prima dell'integrazione |
 | [0012](docs/adr/0012-design-tooling.md) | Estrazione kit, font locale e strumenti design |
+| [0013](docs/adr/0013-pwa-shell.md) | Shell React, routing, precache e accessibilita' |
 
 ## Consultazione e avvio
 
@@ -47,8 +51,24 @@ npm test
 npm run test:design
 ```
 
-La verifica browser usa Microsoft Edge installato; `PLAYWRIGHT_CHANNEL` permette
-di selezionare un altro canale disponibile. Non esiste ancora una shell app.
+La verifica della preview componenti usa Microsoft Edge installato;
+`PLAYWRIGHT_CHANNEL` permette di selezionare un altro canale disponibile.
+
+Per usare la shell PWA, dalla root:
+
+```powershell
+npm ci
+npm run check
+npm test
+npm run build
+npm run test:pwa
+npm run preview --workspace @purrroute/web -- --host 127.0.0.1 --port 4173 --strictPort
+```
+
+Aprire <http://127.0.0.1:4173/>. Se la porta e' occupata, scegliere un'altra porta.
+Per sviluppo con ricaricamento automatico usare `npm run dev`; il service worker
+e' attivo solo nella build di produzione. La shell richiede Node con supporto
+type stripping per i test TypeScript (ambiente verificato: Node 26.12.1).
 Il [kit HTML](purrRoute%20%E2%80%93%20kit%20completo%20%28v5%29.html)
 si apre direttamente nel browser, senza server; carica il font da Google Fonts.
 Il [kit Markdown](purrRoute%20%E2%80%93%20kit%20completo%20%28v5%29.md)
@@ -63,7 +83,8 @@ I due originali sono preservati, compreso il refuso sul numero delle categorie.
 - Aprire i dieci ADR e controllare motivazioni, alternative, conseguenze e fonti.
 - Verificare che non siano stati aggiunti codice applicativo o servizi esterni.
 
-Il passo 2 aggiunge test di SVG, PNG, font, contrasto e anteprima responsive.
+Il passo 2 aggiunge test di SVG, PNG, font, contrasto e anteprima responsive;
+il passo 3 aggiunge test di preferenze, traduzioni e contratto PWA.
 Restano aperte la fattibilita' del costo zero,
 le condizioni dei provider e i requisiti correnti di Google Play.
 
