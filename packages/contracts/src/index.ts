@@ -85,6 +85,32 @@ export const RouteResponseSchema = Type.Object({
   provider: Type.String(),
 }, { additionalProperties: false });
 
+export const NearbyExploreRequestSchema = Type.Object({
+  latitude: Type.Number({ minimum: -90, maximum: 90 }),
+  longitude: Type.Number({ minimum: -180, maximum: 180 }),
+  radiusKm: Type.Union([Type.Literal(1), Type.Literal(3), Type.Literal(5)]),
+  category: Type.Union([Type.Literal('museum'), Type.Literal('park')]),
+  locale: Type.Union([Type.Literal('it'), Type.Literal('en')]),
+}, { additionalProperties: false });
+
+export const ExploreCandidateSchema = Type.Object({
+  id: Type.String({ pattern: '^Q[1-9][0-9]*$' }),
+  label: Type.String({ minLength: 1, maxLength: 200 }),
+  latitude: Type.Number({ minimum: -90, maximum: 90 }),
+  longitude: Type.Number({ minimum: -180, maximum: 180 }),
+  distanceMeters: Type.Number({ minimum: 0, maximum: 5000 }),
+  category: Type.Union([Type.Literal('museum'), Type.Literal('park')]),
+}, { additionalProperties: false });
+
+export const NearbyExploreResponseSchema = Type.Object({
+  results: Type.Array(ExploreCandidateSchema, { maxItems: 20 }),
+  attribution: Type.Literal('Wikidata'),
+}, { additionalProperties: false });
+
+export type NearbyExploreRequest = Type.Static<typeof NearbyExploreRequestSchema>;
+export type ExploreCandidate = Type.Static<typeof ExploreCandidateSchema>;
+export type NearbyExploreResponse = Type.Static<typeof NearbyExploreResponseSchema>;
+
 const SyncMetadataSchema = {
   id: Type.String({ format: 'uuid' }),
   revision: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
@@ -130,8 +156,11 @@ export const SyncStopSchema = Type.Object({
   longitude: Type.Union([Type.Number({ minimum: -180, maximum: 180 }), Type.Null()]),
   scheduledAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
   durationMinutes: Type.Union([Type.Integer({ minimum: 0, maximum: 100000 }), Type.Null()]),
-  locationSource: Type.Union([Type.Literal('manual'), Type.Literal('locationiq'), Type.Null()]),
+  locationSource: Type.Union([
+    Type.Literal('manual'), Type.Literal('locationiq'), Type.Literal('wikidata'), Type.Null(),
+  ]),
   sourcePlaceId: Type.Union([Type.String({ minLength: 1, maxLength: 100 }), Type.Null()]),
+  sourceUrl: Type.Union([Type.String({ minLength: 1, maxLength: 2048 }), Type.Null()]),
 }, { additionalProperties: false });
 
 export const SyncListSchema = Type.Object({
@@ -158,6 +187,19 @@ export const SyncExpenseSchema = Type.Object({
   spentAt: Type.Union([Type.String({ format: 'date-time' }), Type.Null()]),
   paidByUserId: Type.Union([Type.String({ format: 'uuid' }), Type.Null()]),
 }, { additionalProperties: false });
+
+export const LinkPreviewRequestSchema = Type.Object({
+  url: Type.String({ minLength: 8, maxLength: 2048, format: 'uri' }),
+}, { additionalProperties: false });
+
+export const LinkPreviewResponseSchema = Type.Object({
+  title: Type.String({ minLength: 1, maxLength: 240 }),
+  description: Type.Union([Type.String({ maxLength: 1000 }), Type.Null()]),
+  sourceUrl: Type.String({ minLength: 1, maxLength: 2048, format: 'uri' }),
+}, { additionalProperties: false });
+
+export type LinkPreviewRequest = Type.Static<typeof LinkPreviewRequestSchema>;
+export type LinkPreviewResponse = Type.Static<typeof LinkPreviewResponseSchema>;
 
 export const SyncTripRequestSchema = Type.Object({
   expectedVersion: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),

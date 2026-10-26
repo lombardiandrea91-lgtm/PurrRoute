@@ -116,9 +116,11 @@ utente o itinerario; bastano coordinate della localita', non posizione continua.
 | [Overpass / OSM](https://wiki.openstreetmap.org/wiki/Overpass_API) | Istanze pubbliche gratuite sovraccaricabili. La wiki corrente distingue uso una tantum da regolare e aggrega tutti gli utenti; limite effettivo dell'istanza: non verificato | Dati ODbL: attribuzione e obblighi sulle banche dati derivate, non sul codice applicativo. Cache ammessa dalla licenza, non polling illimitato o scraping nazionale | Regione e retention dell'istanza scelta: non verificato. Ipotesi: POI Italia variabili per zona; non garantisce disponibilita' o orari |
 | [Google Places](https://developers.google.com/maps/documentation/places/web-service/policies) | Prezzi e quote attuali SKU: non verificato; non adottare il vecchio credito mensile come fatto corrente | Policy limita cache; place ID conservabile indefinitamente, non tutta la scheda. Attribuzioni foto/autori e termini SEE distinti. Compatibilita' MapLibre da verificare specificamente nei termini SEE | Regione/retention e copertura Italia misurata: non verificato; ipotesi maggiore ricchezza commerciale, non prova |
 
-Raccomandazione: Wikidata per dati culturali, Overpass solo complementare con
-query su richiesta e cache controllata. Il ranking dei consigli resta nostro,
-deterministico e spiegabile; il modello AI e' un adapter separato e spento.
+Passo 9: Wikidata è integrato solo per musei/parchi con ricerca esplicita vicino a
+una tappa, classe `P31` diretta e ordinamento per distanza. Il risultato viene aggiunto
+al viaggio solo su azione utente. Overpass resta non integrato finché uso aggregato
+e obblighi ODbL non hanno un piano dedicato. AI resta spenta; non c'è ranking
+personalizzato, solo prossimità deterministica.
 Non copiare recensioni, foto o intere schede Google dentro il database offline.
 
 Fonti: [licenza Wikidata](https://www.wikidata.org/wiki/Wikidata:Licensing) e

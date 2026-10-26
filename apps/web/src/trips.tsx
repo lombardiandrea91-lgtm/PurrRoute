@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react';
+import { Link } from 'react-router';
 import { renderSvg } from '@purrroute/design-system';
 import type { GraphicId } from '@purrroute/design-system';
 import type { StopCategory, StopPlanningState, Trip, TripStop } from '@purrroute/domain';
@@ -224,6 +225,7 @@ function StopRow({
       <button className="trip-button" type="button" onClick={() => void onReorder(stop.position + 1)}>{translate('moveDown')}</button>
       <button className="trip-button trip-button-danger" type="button" onClick={() => void onDelete()}>{translate('deleteStop')}</button>
     </div>
+    {stop.sourceUrl && <a className="trip-stop-source" href={stop.sourceUrl} target="_blank" rel="noreferrer">{translate('importSourceLink')}</a>}
     {failure && <p className="trip-error" role="alert">{failure}</p>}
   </article>;
 }
@@ -387,6 +389,7 @@ export function TripsWorkspace({ locale, cat }: { locale: Locale; cat: 'rosso' |
             <p className="trip-dates">{selectedTrip.startsOn ? dateLabel(selectedTrip.startsOn, locale) : ''}{selectedTrip.endsOn ? ` – ${dateLabel(selectedTrip.endsOn, locale)}` : ''}</p>
           </div>
           <div className="trip-actions">
+            <Link className="trip-button" to={`/import?trip=${selectedTrip.id}`}><Icon id="ui-biglietti" />{translate('import')}</Link>
             <button className="trip-button" type="button" onClick={() => setTripEditor(selectedTrip)}>{translate('editTrip')}</button>
             <button className="trip-button trip-button-danger" type="button" onClick={() => void deleteTrip()}>{translate('deleteTrip')}</button>
           </div>

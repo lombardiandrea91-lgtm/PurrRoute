@@ -55,6 +55,7 @@ export interface StopInput {
   sourcePlaceId?: string | null;
   scheduledAt?: string | null;
   durationMinutes?: number | null;
+  sourceUrl?: string | null;
 }
 
 export interface TripDetails {
@@ -102,6 +103,22 @@ function validateDate(date: string): void {
     || Number.isNaN(parsed.getTime())
     || parsed.toISOString().slice(0, 10) !== date) {
     throw new TripValidationError('invalid_date');
+  }
+}
+
+function normalizeSourceUrl(sourceUrl: string | null | undefined): string | null {
+  const value = sourceUrl?.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password || value.length > 2048) {
+      throw new Error('invalid_source_url');
+    }
+    const normalized = url.toString();
+    if (normalized.length > 2048) throw new Error('invalid_source_url');
+    return normalized;
+  } catch {
+    throw new TripValidationError('invalid_stop');
   }
 }
 
@@ -471,11 +488,13 @@ export class LocalTripRepository {
     const longitude = input.longitude ?? null;
     const locationSource = input.locationSource ?? (latitude !== null ? 'manual' : null);
     const sourcePlaceId = input.sourcePlaceId?.trim() || null;
+    const sourceUrl = normalizeSourceUrl(input.sourceUrl);
     if ((latitude === null) !== (longitude === null)
       || (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90))
       || (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))
-      || (locationSource === 'locationiq' && (!sourcePlaceId || latitude === null))
-      || (locationSource !== 'locationiq' && sourcePlaceId !== null)) {
+      || ((locationSource === 'locationiq' || locationSource === 'wikidata')
+        && (!sourcePlaceId || latitude === null))
+      || (locationSource !== 'locationiq' && locationSource !== 'wikidata' && sourcePlaceId !== null)) {
       throw new TripValidationError('invalid_stop');
     }
     return this.database.transaction('rw', this.database.trips, this.database.days, this.database.stops, async () => {
@@ -495,6 +514,7 @@ export class LocalTripRepository {
         ...createStopMarkers(), position: stops.length, address: input.address?.trim() || null, latitude, longitude,
         scheduledAt: input.scheduledAt ?? null, durationMinutes: input.durationMinutes ?? null,
         locationSource, sourcePlaceId,
+        sourceUrl,
         revision: 1, createdAt: now, updatedAt: now, deletedAt: null,
       };
       await this.database.stops.add(stop);
@@ -505,7 +525,7 @@ export class LocalTripRepository {
 
   async updateStop(id: string, changes: Partial<Pick<TripStop,
     'name' | 'category' | 'planningState' | 'isFavorite' | 'visitedAt' | 'scheduledAt'
-    | 'durationMinutes' | 'address' | 'latitude' | 'longitude' | 'locationSource' | 'sourcePlaceId'>>): Promise<TripStop> {
+    | 'durationMinutes' | 'address' | 'latitude' | 'longitude' | 'locationSource' | 'sourcePlaceId' | 'sourceUrl'>>): Promise<TripStop> {
     return this.database.transaction('rw', this.database.trips, this.database.stops, async () => {
       const stop = await this.database.stops.get(id);
       if (!stop || stop.deletedAt !== null) throw new TripValidationError('invalid_stop');
@@ -527,15 +547,17 @@ export class LocalTripRepository {
       const longitude = changes.longitude === undefined ? stop.longitude : changes.longitude;
       const locationSource = changes.locationSource === undefined ? stop.locationSource : changes.locationSource;
       const sourcePlaceId = changes.sourcePlaceId === undefined ? stop.sourcePlaceId : changes.sourcePlaceId;
+      const sourceUrl = changes.sourceUrl === undefined ? stop.sourceUrl : normalizeSourceUrl(changes.sourceUrl);
       if ((latitude === null) !== (longitude === null)
         || (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90))
         || (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))
-        || (locationSource === 'locationiq' && (!sourcePlaceId || latitude === null))
-        || (locationSource !== 'locationiq' && sourcePlaceId !== null)) {
+        || ((locationSource === 'locationiq' || locationSource === 'wikidata')
+          && (!sourcePlaceId || latitude === null))
+        || (locationSource !== 'locationiq' && locationSource !== 'wikidata' && sourcePlaceId !== null)) {
         throw new TripValidationError('invalid_stop');
       }
       const updated: TripStop = {
-        ...stop, ...changes, name, revision: stop.revision + 1, updatedAt: timestamp(),
+        ...stop, ...changes, name, sourceUrl, revision: stop.revision + 1, updatedAt: timestamp(),
       };
       await this.database.stops.put(updated);
       await touchTrip(this.database, stop.tripId);

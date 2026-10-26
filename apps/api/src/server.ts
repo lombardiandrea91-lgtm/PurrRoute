@@ -43,6 +43,10 @@ import type { MapServices } from './maps/routes.ts';
 import { OpenFreeMapTiles, registerOpenFreeMapTileRoutes } from './maps/openfreemap-tiles.ts';
 import { SyncPayloadError } from './sync/postgres-sync-repository.ts';
 import type { SyncPushResult } from './sync/postgres-sync-repository.ts';
+import { registerExploreRoutes } from './explore/routes.ts';
+import type { ExploreServices } from './explore/routes.ts';
+import { registerLinkImportRoutes } from './import/routes.ts';
+import type { LinkImportService } from './import/routes.ts';
 
 type AuthRoutes = Pick<
   AuthService,
@@ -63,6 +67,8 @@ export interface BuildServerOptions {
   maps?: MapServices;
   tiles?: OpenFreeMapTiles;
   sync?: SyncRoutes;
+  explore?: ExploreServices;
+  linkImport?: LinkImportService;
   mailSink?: DevelopmentMailSink;
   production?: boolean;
   webOrigin?: string;
@@ -300,6 +306,9 @@ export function buildServer(options: BuildServerOptions = {}) {
       && 'code' in error && error.code === 'FST_CSRF_INVALID_TOKEN') {
       return reply.code(403).send({ error: 'csrf_invalid' });
     }
+    if (typeof error === 'object' && error !== null && 'statusCode' in error && error.statusCode === 429) {
+      return reply.code(429).send({ error: 'rate_limited' });
+    }
     if (typeof error === 'object' && error !== null && 'validation' in error) {
       return reply.code(400).send({ error: 'invalid_request' });
     }
@@ -320,6 +329,10 @@ export function buildServer(options: BuildServerOptions = {}) {
   if (options.auth && options.sync) addSyncRoutes(app, options.auth, options.sync, production);
   registerMapRoutes(app, options.maps);
   registerOpenFreeMapTileRoutes(app, options.tiles);
+  registerExploreRoutes(app, options.explore);
+  if (options.linkImport) {
+    app.register(async (importer) => registerLinkImportRoutes(importer, options.linkImport));
+  }
 
   return app;
 }

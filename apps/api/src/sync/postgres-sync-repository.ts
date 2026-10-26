@@ -44,6 +44,7 @@ interface StopRow extends Record<string, unknown> {
   duration_minutes: number | null;
   location_source: SyncTripRequest['stops'][number]['locationSource'];
   source_place_id: string | null;
+  source_url: string | null;
   revision: number;
   created_at: Date | string;
   updated_at: Date | string;
@@ -159,6 +160,7 @@ function toSnapshot(
       durationMinutes: stop.duration_minutes,
       locationSource: stop.location_source,
       sourcePlaceId: stop.source_place_id,
+      sourceUrl: stop.source_url,
       revision: stop.revision,
       createdAt: iso(stop.created_at) as string,
       updatedAt: iso(stop.updated_at) as string,
@@ -243,8 +245,10 @@ function validateRelations(request: SyncTripRequest): void {
     if (stop.tripId !== tripId || stopIds.has(stop.id)
       || (stop.dayId !== null && !dayIds.has(stop.dayId))
       || ((stop.latitude === null) !== (stop.longitude === null))
-      || (stop.locationSource === 'locationiq' && (!stop.sourcePlaceId || stop.latitude === null))
-      || (stop.locationSource !== 'locationiq' && stop.sourcePlaceId !== null)) {
+      || ((stop.locationSource === 'locationiq' || stop.locationSource === 'wikidata')
+        && (!stop.sourcePlaceId || stop.latitude === null))
+      || (stop.locationSource !== 'locationiq' && stop.locationSource !== 'wikidata' && stop.sourcePlaceId !== null)
+      || (stop.sourceUrl !== null && !isSafeSourceUrl(stop.sourceUrl))) {
       throw new SyncPayloadError();
     }
     stopIds.add(stop.id);
@@ -265,6 +269,15 @@ function validateRelations(request: SyncTripRequest): void {
       || !Number.isSafeInteger(expense.amountMinor) || expense.amountMinor < 0
       || !/^[A-Z]{3}$/.test(expense.currency)) throw new SyncPayloadError();
     expenseIds.add(expense.id);
+  }
+}
+
+function isSafeSourceUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !url.username && !url.password && value.length <= 2048;
+  } catch {
+    return false;
   }
 }
 
@@ -345,23 +358,23 @@ export class PostgresSyncRepository {
           `INSERT INTO trip_stops
             (id, trip_id, day_id, name, category, planning_state, is_favorite, visited_at,
               position, address, latitude, longitude, scheduled_at, duration_minutes,
-              location_source, source_place_id, revision, created_at, updated_at, deleted_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-              $17, $18, now(), $19)
+              location_source, source_place_id, source_url, revision, created_at, updated_at, deleted_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+              $18, $19, now(), $20)
             ON CONFLICT (id) DO UPDATE SET day_id = EXCLUDED.day_id, name = EXCLUDED.name,
               category = EXCLUDED.category, planning_state = EXCLUDED.planning_state,
               is_favorite = EXCLUDED.is_favorite, visited_at = EXCLUDED.visited_at,
               position = EXCLUDED.position, address = EXCLUDED.address, latitude = EXCLUDED.latitude,
               longitude = EXCLUDED.longitude, scheduled_at = EXCLUDED.scheduled_at,
               duration_minutes = EXCLUDED.duration_minutes, location_source = EXCLUDED.location_source,
-              source_place_id = EXCLUDED.source_place_id,
+              source_place_id = EXCLUDED.source_place_id, source_url = EXCLUDED.source_url,
               revision = GREATEST(trip_stops.revision + 1, EXCLUDED.revision),
               updated_at = now(), deleted_at = EXCLUDED.deleted_at
             WHERE trip_stops.trip_id = EXCLUDED.trip_id`,
           [stop.id, trip.id, stop.dayId, stop.name, stop.category, stop.planningState,
             stop.isFavorite, stop.visitedAt, stop.position, stop.address, stop.latitude,
             stop.longitude, stop.scheduledAt, stop.durationMinutes, stop.locationSource,
-            stop.sourcePlaceId, stop.revision, stop.createdAt, stop.deletedAt],
+            stop.sourcePlaceId, stop.sourceUrl, stop.revision, stop.createdAt, stop.deletedAt],
         );
         if (saved.rowCount !== 1) throw new SyncPayloadError();
       }

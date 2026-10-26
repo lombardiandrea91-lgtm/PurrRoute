@@ -33,6 +33,34 @@ h2 { font-size: 16px; font-weight: 600; margin: 0; }
 .empty-icon { width: 80px; height: 80px; }
 .detail-column .empty-icon { width: 48px; height: 48px; color: var(--secondary); }
 .page { padding: 36px; max-width: 1100px; }
+.explore-workspace { width: 100%; max-width: 1120px; padding: 36px; }
+.import-workspace { width: 100%; }
+.import-heading { margin-bottom: 24px; }
+.import-heading p, .import-disclosure, .import-summary { max-width: 760px; color: var(--secondary); }
+.import-trip-picker { max-width: 760px; }
+.import-modes { max-width: 760px; margin: 20px 0; padding: 0; border: 0; }
+.import-link-form { max-width: 760px; }
+.import-disclosure { font-size: 13px; line-height: 1.5; }
+.import-screenshot { max-width: 760px; }
+.import-image-preview { display: block; max-width: min(100%, 520px); max-height: 360px; margin: 18px 0; object-fit: contain; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); }
+.import-review { max-width: 760px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); }
+.import-review h2 { margin: 0 0 12px; font-size: 18px; }
+.import-source-link { display: inline-block; margin: 0 16px 12px 0; }
+.trip-stop-source { display: inline-block; margin: 0 12px 12px 0; font-size: 13px; }
+.explore-heading { margin-bottom: 24px; }
+.explore-heading h1 { margin: 0; }
+.explore-heading p { max-width: 680px; color: var(--secondary); font-size: 14px; line-height: 1.5; }
+.explore-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; align-items: end; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.explore-controls label { display: grid; gap: 6px; min-width: 0; color: var(--secondary); font-size: 12px; }
+.explore-controls select { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; }
+.explore-disclosure { max-width: 760px; color: var(--secondary); font-size: 12px; line-height: 1.5; }
+.explore-results-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-top: 30px; }
+.explore-results-heading span { color: var(--secondary); font-size: 12px; }
+.explore-results { list-style: none; margin: 12px 0; padding: 0; border-top: 1px solid var(--border); }
+.explore-results li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.explore-result-copy { display: grid; gap: 5px; min-width: 0; }
+.explore-result-copy strong { overflow-wrap: anywhere; }
+.explore-result-copy span, .explore-wikidata-link { color: var(--secondary); font-size: 12px; }
 .map-unavailable { display: grid; place-items: center; margin-top: 28px; min-height: 440px; background-color: var(--chip); background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 44px 44px; }
 .map-unavailable .empty { background: var(--bg); min-height: 180px; width: min(280px, 90%); }
 .status-row { display: flex; align-items: center; gap: 12px; padding: 24px 0; margin-top: 20px; border-bottom: 1px solid var(--border); font-size: 14px; }
@@ -149,6 +177,13 @@ input { accent-color: var(--action); }
   .logistics-list-heading button { justify-self: start; }
   .logistics-expense-list li { grid-template-columns: minmax(0, 1fr) auto; }
   .logistics-expense-list .logistics-remove { grid-column: 1 / -1; justify-self: start; }
+  .explore-workspace { padding: 28px 20px; }
+  .import-workspace { padding: 28px 20px; }
+  .explore-controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .explore-controls label:nth-child(1), .explore-controls label:nth-child(2), .explore-controls button { grid-column: 1 / -1; }
+  .explore-results li { grid-template-columns: minmax(0, 1fr) auto; }
+  .explore-result-copy { grid-column: 1 / -1; }
+  .explore-results li .trip-button { grid-column: 1 / -1; justify-self: start; }
 }
 @media (max-width: 1000px) {
   .sidebar { width: 200px; padding: 24px 16px; }

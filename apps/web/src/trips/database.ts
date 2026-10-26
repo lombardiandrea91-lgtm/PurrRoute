@@ -49,6 +49,18 @@ export class PurrRouteLocalDatabase extends Dexie {
       metadata: 'id',
       syncStates: 'id, accountId, serverVersion',
     });
+    this.version(4).stores({
+      trips: 'id, ownerId, updatedAt, deletedAt',
+      days: 'id, tripId, date, position, updatedAt, deletedAt',
+      stops: 'id, tripId, dayId, category, planningState, position, isFavorite, visitedAt, updatedAt, deletedAt',
+      lists: 'id, tripId, kind, updatedAt, deletedAt',
+      listItems: 'id, listId, position, updatedAt, deletedAt',
+      expenses: 'id, tripId, spentAt, currency, updatedAt, deletedAt',
+      metadata: 'id',
+      syncStates: 'id, accountId, serverVersion',
+    }).upgrade((transaction) => transaction.table('stops').toCollection().modify((stop) => {
+      stop.sourceUrl ??= null;
+    }));
   }
 }
 

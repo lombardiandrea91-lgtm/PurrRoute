@@ -6,6 +6,8 @@ import { down as downCore, up as upCore } from '../db/migrations/001_create_core
 import { down as downSchedule, up as upSchedule } from '../db/migrations/002_add_stop_schedule.js';
 import { down as downLocationSource, up as upLocationSource } from '../db/migrations/003_add_stop_location_source.js';
 import { down as downSyncVersion, up as upSyncVersion } from '../db/migrations/004_add_trip_sync_version.js';
+import { down as downWikidataSource, up as upWikidataSource } from '../db/migrations/005_add_wikidata_location_source.js';
+import { down as downStopSourceUrl, up as upStopSourceUrl } from '../db/migrations/006_add_stop_source_url.js';
 
 function captureSql(migration) {
   const statements = [];
@@ -50,7 +52,8 @@ function snapshot(title = 'Roma') {
       id: stopId, tripId, dayId, name: 'Colosseo', category: 'museum', planningState: 'planned',
       isFavorite: false, visitedAt: null, position: 0, address: null, latitude: 41.8902,
       longitude: 12.4922, scheduledAt: null, durationMinutes: null, locationSource: 'manual',
-      sourcePlaceId: null, revision: 1, createdAt: timestamp, updatedAt: timestamp, deletedAt: null,
+      sourcePlaceId: null, sourceUrl: 'https://example.test/colosseo',
+      revision: 1, createdAt: timestamp, updatedAt: timestamp, deletedAt: null,
     }],
     lists: [{
       id: listId, tripId, title: 'Bagaglio', kind: 'packing',
@@ -75,6 +78,8 @@ test('sync PostgreSQL applica snapshot atomici, versioni ottimistiche e ownershi
   await engine.exec(captureSql(upSchedule));
   await engine.exec(captureSql(upLocationSource));
   await engine.exec(captureSql(upSyncVersion));
+  await engine.exec(captureSql(upWikidataSource));
+  await engine.exec(captureSql(upStopSourceUrl));
   await engine.query(
     'INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3), ($4, $5, $6)',
     [ownerId, 'owner@example.test', 'hash', otherOwnerId, 'other@example.test', 'hash'],
@@ -86,6 +91,7 @@ test('sync PostgreSQL applica snapshot atomici, versioni ottimistiche e ownershi
   assert.equal(initial.snapshot.version, 1);
   assert.equal(initial.snapshot.days[0].date, '2026-10-26');
   assert.equal(initial.snapshot.stops[0].locationSource, 'manual');
+  assert.equal(initial.snapshot.stops[0].sourceUrl, 'https://example.test/colosseo');
   assert.equal(initial.snapshot.lists[0].kind, 'packing');
   assert.equal(initial.snapshot.listItems[0].label, 'Caricatore');
   assert.equal(initial.snapshot.expenses[0].amountMinor, 2490);
@@ -136,7 +142,16 @@ test('sync PostgreSQL applica snapshot atomici, versioni ottimistiche e ownershi
   await assert.rejects(repository.pushTrip(ownerId, invalidListItem), SyncPayloadError);
   assert.equal((await repository.getTrip(ownerId, tripId)).version, 3);
 
+  const invalidWikidataSource = snapshot('Fonte Wikidata senza QID');
+  invalidWikidataSource.expectedVersion = 3;
+  invalidWikidataSource.stops[0].locationSource = 'wikidata';
+  invalidWikidataSource.stops[0].sourcePlaceId = null;
+  await assert.rejects(repository.pushTrip(ownerId, invalidWikidataSource), SyncPayloadError);
+  assert.equal((await repository.getTrip(ownerId, tripId)).version, 3);
+
   await engine.exec(captureSql(downSyncVersion));
+  await engine.exec(captureSql(downStopSourceUrl));
+  await engine.exec(captureSql(downWikidataSource));
   await engine.exec(captureSql(downLocationSource));
   await engine.exec(captureSql(downSchedule));
   await engine.exec(captureSql(downCore));

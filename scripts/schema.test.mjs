@@ -5,6 +5,8 @@ import { down as downCore, up as upCore } from '../db/migrations/001_create_core
 import { down as downSchedule, up as upSchedule } from '../db/migrations/002_add_stop_schedule.js';
 import { down as downLocationSource, up as upLocationSource } from '../db/migrations/003_add_stop_location_source.js';
 import { down as downSyncVersion, up as upSyncVersion } from '../db/migrations/004_add_trip_sync_version.js';
+import { down as downWikidataSource, up as upWikidataSource } from '../db/migrations/005_add_wikidata_location_source.js';
+import { down as downStopSourceUrl, up as upStopSourceUrl } from '../db/migrations/006_add_stop_source_url.js';
 
 function captureSql(migration) {
   const statements = [];
@@ -50,6 +52,8 @@ test('PostgreSQL applica la migrazione e fa rispettare vincoli e rollback', asyn
   await database.exec(captureSql(upSchedule));
   await database.exec(captureSql(upLocationSource));
   await database.exec(captureSql(upSyncVersion));
+  await database.exec(captureSql(upWikidataSource));
+  await database.exec(captureSql(upStopSourceUrl));
   const ownerId = '00000000-0000-4000-8000-000000000001';
   const otherTripId = '00000000-0000-4000-8000-000000000002';
   const tripId = '00000000-0000-4000-8000-000000000003';
@@ -84,6 +88,12 @@ test('PostgreSQL applica la migrazione e fa rispettare vincoli e rollback', asyn
       VALUES ($1, $2, $3, $4, $5, true, now(), $6, $7)`,
     ['00000000-0000-4000-8000-000000000005', tripId, dayId, 'Colosseo', 'museum', '2026-10-26T09:30:00.000Z', 90],
   );
+  await database.query(
+    `INSERT INTO trip_stops
+      (id, trip_id, name, category, latitude, longitude, location_source, source_place_id)
+      VALUES ($1, $2, $3, $4, 41.9, 12.5, 'wikidata', 'Q123456')`,
+    ['00000000-0000-4000-8000-000000000009', tripId, 'Museo Wikidata', 'museum'],
+  );
 
   const markers = await database.query(
     'SELECT is_favorite, visited_at IS NOT NULL AS visited, scheduled_at, duration_minutes FROM trip_stops WHERE name = $1',
@@ -92,6 +102,22 @@ test('PostgreSQL applica la migrazione e fa rispettare vincoli e rollback', asyn
   assert.equal(markers.rows[0].is_favorite, true);
   assert.equal(markers.rows[0].visited, true);
   assert.equal(markers.rows[0].duration_minutes, 90);
+  const wikidataStop = await database.query(
+    'SELECT location_source, source_place_id FROM trip_stops WHERE name = $1',
+    ['Museo Wikidata'],
+  );
+  assert.equal(wikidataStop.rows[0].location_source, 'wikidata');
+  assert.equal(wikidataStop.rows[0].source_place_id, 'Q123456');
+  await database.query(
+    `INSERT INTO trip_stops (id, trip_id, name, category, source_url)
+      VALUES ($1, $2, $3, $4, $5)`,
+    ['00000000-0000-4000-8000-000000000011', tripId, 'Link importato', 'attraction', 'https://example.test/place'],
+  );
+  await assert.rejects(database.query(
+    `INSERT INTO trip_stops (id, trip_id, name, category, source_url)
+      VALUES ($1, $2, $3, $4, $5)`,
+    ['00000000-0000-4000-8000-000000000012', tripId, 'Link non HTTPS', 'attraction', 'http://example.test/place'],
+  ));
 
   await assert.rejects(database.query(
     `INSERT INTO trip_stops (id, trip_id, day_id, name, category)
@@ -109,7 +135,16 @@ test('PostgreSQL applica la migrazione e fa rispettare vincoli e rollback', asyn
       VALUES ($1, $2, $3, $4, $5, 'locationiq')`,
     ['00000000-0000-4000-8000-000000000008', tripId, dayId, 'Fonte senza ID', 'waypoint'],
   ));
+  await assert.rejects(database.query(
+    `INSERT INTO trip_stops
+      (id, trip_id, day_id, name, category, latitude, longitude, location_source)
+      VALUES ($1, $2, $3, $4, $5, 45, 12, 'wikidata')`,
+    ['00000000-0000-4000-8000-000000000010', tripId, dayId, 'Fonte Wikidata senza QID', 'museum'],
+  ));
 
+  await database.query('DELETE FROM trip_stops WHERE id = $1', ['00000000-0000-4000-8000-000000000009']);
+  await database.exec(captureSql(downStopSourceUrl));
+  await database.exec(captureSql(downWikidataSource));
   await database.exec(captureSql(downSyncVersion));
   await database.exec(captureSql(downLocationSource));
   await database.exec(captureSql(downSchedule));

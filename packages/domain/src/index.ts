@@ -19,7 +19,7 @@ export type StopCategory = (typeof stopCategories)[number];
 
 export const stopPlanningStates = ['planned', 'optional'] as const;
 export type StopPlanningState = (typeof stopPlanningStates)[number];
-export type StopLocationSource = 'manual' | 'locationiq';
+export type StopLocationSource = 'manual' | 'locationiq' | 'wikidata';
 
 export const tripMemberRoles = ['owner', 'editor', 'viewer'] as const;
 export type TripMemberRole = (typeof tripMemberRoles)[number];
@@ -76,6 +76,7 @@ export interface TripStop extends EntityMetadata, StopMarkers {
   durationMinutes: number | null;
   locationSource: StopLocationSource | null;
   sourcePlaceId: string | null;
+  sourceUrl: string | null;
 }
 
 export interface TripMembership extends EntityMetadata {

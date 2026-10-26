@@ -1,6 +1,6 @@
 # Struttura del repository
 
-Stato: scaffolding incrementale. Passo 4: dominio, contratti, API, repository e
+Stato: passi 4-10 implementati localmente. Passo 4: dominio, contratti, API, repository e
 migrazioni presenti; server PostgreSQL/email produzione restano da verificare.
 Passo 5: core viaggi locale Dexie. Passo 6: MapLibre, OpenFreeMap e adapter API
 geospaziali presenti; LocationIQ resta opt-in, ORS non selezionato. I due kit
@@ -49,7 +49,9 @@ API REST modulare e npm workspaces; niente microservizi o orchestratore monorepo
 
 Al passo 2 nasce il design system. Al passo 3 nasce il client PWA; al passo 4
 backend e schema; al passo 5 il nucleo locale; al passo 7 sync owner-only e mappe
-offline limitate; al passo 8 checklist/packing e registro spese locali. ID stabili,
+offline limitate; al passo 8 checklist/packing e spese; al passo 9 Esplora Wikidata
+esplicito con ranking per distanza; al passo 10 preview link e screenshot locale
+con aggiunta esplicita. AI, OCR e storage esterno restano disattivati. ID stabili,
 revisioni e tombstone sono usati; conflitti restituiscono
 409 e richiedono scelta esplicita, senza merge automatico. Retry idempotenti e
 collaborazione restano da completare.

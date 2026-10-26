@@ -3,7 +3,8 @@ import test from 'node:test';
 import { randomUUID } from 'node:crypto';
 
 await import('fake-indexeddb/auto');
-const { createTripDatabase } = await import('../apps/web/src/trips/database.ts');
+const Dexie = (await import('dexie')).default;
+const { createTripDatabase, PurrRouteLocalDatabase } = await import('../apps/web/src/trips/database.ts');
 const { LocalTripRepository, TripValidationError } = await import('../apps/web/src/trips/repository.ts');
 
 async function withRepository(work) {
@@ -14,6 +15,40 @@ async function withRepository(work) {
     await database.delete();
   }
 }
+
+test('upgrade IndexedDB v3 aggiunge sourceUrl nullo senza perdere le tappe', async () => {
+  const name = `purrroute-legacy-${randomUUID()}`;
+  const legacy = new Dexie(name);
+  legacy.version(3).stores({
+    trips: 'id, ownerId, updatedAt, deletedAt',
+    days: 'id, tripId, date, position, updatedAt, deletedAt',
+    stops: 'id, tripId, dayId, category, planningState, position, isFavorite, visitedAt, updatedAt, deletedAt',
+    lists: 'id, tripId, kind, updatedAt, deletedAt',
+    listItems: 'id, listId, position, updatedAt, deletedAt',
+    expenses: 'id, tripId, spentAt, currency, updatedAt, deletedAt',
+    metadata: 'id',
+    syncStates: 'id, accountId, serverVersion',
+  });
+  await legacy.open();
+  await legacy.table('stops').put({
+    id: 'legacy-stop', tripId: 'legacy-trip', dayId: null, name: 'Tappa esistente', category: 'attraction',
+    planningState: 'planned', isFavorite: false, visitedAt: null, position: 0, address: null,
+    latitude: null, longitude: null, scheduledAt: null, durationMinutes: null,
+    locationSource: null, sourcePlaceId: null, revision: 1,
+    createdAt: '2026-10-26T12:00:00.000Z', updatedAt: '2026-10-26T12:00:00.000Z', deletedAt: null,
+  });
+  legacy.close();
+
+  const upgraded = new PurrRouteLocalDatabase(name);
+  try {
+    await upgraded.open();
+    const stop = await upgraded.stops.get('legacy-stop');
+    assert.equal(stop.name, 'Tappa esistente');
+    assert.equal(stop.sourceUrl, null);
+  } finally {
+    await upgraded.delete();
+  }
+});
 
 test('viaggio e giorni sono persistiti con input normalizzati e date uniche', async () => {
   await withRepository(async (repository, database) => {
@@ -129,8 +164,23 @@ test('coordinate tappa sono opzionali ma sempre una coppia valida', async () => 
     const sourced = await repository.createStop(trip.id, {
       name: 'Duomo', category: 'museum', latitude: 45.46, longitude: 9.19,
       locationSource: 'locationiq', sourcePlaceId: 'place-123',
+      sourceUrl: 'https://example.test/duomo',
     });
     assert.equal(sourced.sourcePlaceId, 'place-123');
+    assert.equal(sourced.sourceUrl, 'https://example.test/duomo');
+    await assert.rejects(repository.createStop(trip.id, {
+      name: 'Link non HTTPS', category: 'attraction', sourceUrl: 'http://example.test/place',
+    }), (error) => error instanceof TripValidationError && error.code === 'invalid_stop');
+    const wikidata = await repository.createStop(trip.id, {
+      name: 'Museo Wikidata', category: 'museum', latitude: 45.46, longitude: 9.19,
+      locationSource: 'wikidata', sourcePlaceId: 'Q123456',
+    });
+    assert.equal(wikidata.locationSource, 'wikidata');
+    assert.equal(wikidata.sourcePlaceId, 'Q123456');
+    await assert.rejects(repository.createStop(trip.id, {
+      name: 'Fonte senza QID', category: 'museum', latitude: 45.46, longitude: 9.19,
+      locationSource: 'wikidata',
+    }), (error) => error instanceof TripValidationError && error.code === 'invalid_stop');
     const manuallyRepositioned = await repository.updateStop(sourced.id, {
       latitude: 45.47, longitude: 9.2, locationSource: 'manual', sourcePlaceId: null,
     });

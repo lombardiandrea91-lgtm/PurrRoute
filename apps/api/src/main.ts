@@ -3,6 +3,8 @@ import { PostgresAuthRepository } from './auth/postgres-auth-repository.ts';
 import { createPostgresDatabase } from './db/postgres-database.ts';
 import { LocationIqAdapter } from './maps/locationiq-adapter.ts';
 import { PostgresSyncRepository } from './sync/postgres-sync-repository.ts';
+import { WikidataExploreAdapter } from './explore/wikidata-adapter.ts';
+import { LinkMetadataAdapter } from './import/link-metadata-adapter.ts';
 import { buildServer, type BuildServerOptions } from './server.ts';
 
 const environment = process.env;
@@ -28,7 +30,10 @@ const repository = new PostgresAuthRepository(database);
 const sync = new PostgresSyncRepository(database);
 const mailSink = new DevelopmentMailSink();
 const auth = new AuthService(repository, mailSink);
-const options: BuildServerOptions = { auth, mailSink, production, sync };
+const options: BuildServerOptions = {
+  auth, mailSink, production, sync, explore: new WikidataExploreAdapter(),
+  linkImport: new LinkMetadataAdapter(),
+};
 if (environment.WEB_ORIGIN) options.webOrigin = webOrigin;
 const enableLocationIq = environment.MAP_LOCATIONIQ_ENABLED === 'true';
 if (enableLocationIq && !environment.LOCATIONIQ_API_KEY) {

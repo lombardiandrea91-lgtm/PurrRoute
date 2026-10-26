@@ -14,6 +14,10 @@ import { refreshAccountSession } from './account/session.ts';
 import { clearOfflineMaps, readOfflineMapCount } from './maps/offline.ts';
 
 const MapWorkspace = lazy(() => import('./maps/map.tsx'));
+const ExploreWorkspace = lazy(() => import('./explore/explore.tsx')
+  .then((module) => ({ default: module.ExploreWorkspace })));
+const ImportWorkspace = lazy(() => import('./import/import-workspace.tsx')
+  .then((module) => ({ default: module.ImportWorkspace })));
 
 function Graphic({ id, className = '' }: { id: GraphicId; className?: string }) {
   const instance = `svg-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -41,6 +45,7 @@ function Shell() {
   const translate = (key: MessageKey) => messages[preferences.locale][key];
   const navigation: { path: string; key: MessageKey; icon: GraphicId }[] = [
     { path: '/trips', key: 'trips', icon: 'ui-viaggi' },
+    { path: '/explore', key: 'explore', icon: 'ui-esplora' },
     { path: '/map', key: 'map', icon: 'ui-mappa' },
     { path: '/offline', key: 'offline', icon: 'ui-offline' },
     { path: '/settings', key: 'settings', icon: 'ui-impostazioni' },
@@ -69,7 +74,8 @@ function Shell() {
   }, [pathname]);
 
   useEffect(() => {
-    const key = navigation.find((item) => item.path === pathname)?.key;
+    const key = navigation.find((item) => item.path === pathname)?.key
+      ?? (pathname === '/import' ? 'import' : undefined);
     document.title = key ? `${messages[preferences.locale][key]} | purrRoute` : 'purrRoute';
     document.querySelector<HTMLElement>('h1')?.focus();
   }, [pathname, preferences.locale]);
@@ -113,6 +119,8 @@ function Shell() {
         <Routes>
           <Route path="/" element={<Navigate to="/trips" replace />} />
           <Route path="/trips" element={<TripsWorkspace locale={preferences.locale} cat={preferences.cat} />} />
+          <Route path="/explore" element={<Suspense fallback={<section className="page">{heading(translate('explore'))}<p role="status">{translate('mapLoading')}</p></section>}><ExploreWorkspace locale={preferences.locale} /></Suspense>} />
+          <Route path="/import" element={<Suspense fallback={<section className="page">{heading(translate('importTitle'))}<p role="status">{translate('tripLoading')}</p></section>}><ImportWorkspace locale={preferences.locale} /></Suspense>} />
           <Route path="/map" element={<Suspense fallback={<section className="page">{heading(translate('map'))}<p role="status">{translate('mapLoading')}</p></section>}><MapWorkspace locale={preferences.locale} /></Suspense>} />
           <Route path="/offline" element={<section className="page">{heading(translate('offline'))}<div className="status-row"><Graphic id="ui-offline" /><span>{translate(pwa)}</span></div><div className="section-heading"><h2>{translate('local')}</h2><span>{localTripCount}</span></div><p className="muted">{localTripCount === 0 ? translate('empty') : translate('localTripsSaved')}</p><div className="section-heading"><h2>{translate('map')}</h2><span>{offlineMapCount}</span></div><p className="muted">{offlineMapCount ? translate('offlineMapResources') : translate('noDownloads')}</p>{offlineMapCount > 0 && <button className="trip-button" type="button" onClick={() => void clearMapCache()}>{translate('clearOfflineMaps')}</button>}</section>} />
           <Route path="/settings" element={<section className="page settings">{heading(translate('settings'))}
