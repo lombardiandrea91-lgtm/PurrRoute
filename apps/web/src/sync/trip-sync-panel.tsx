@@ -8,6 +8,7 @@ import { messages } from '../messages.ts';
 import type { Locale } from '../preferences.ts';
 import { getAccountSession, subscribeAccountSession } from '../account/session.ts';
 import { pushSyncedTrip, SyncClientError } from './client.ts';
+import { TripCollaborationPanel } from '../collaboration/trip-collaboration-panel.tsx';
 
 const repository = new LocalTripRepository();
 
@@ -61,6 +62,8 @@ export function TripSyncPanel({ trip, locale }: { trip: TripDetails; locale: Loc
       if (error instanceof SyncClientError && error.status === 409) {
         setConflict(error.current);
         setFailure(error.current ? translate('syncConflict') : translate('syncCloudUnavailable'));
+      } else if (error instanceof SyncClientError && error.status === 403) {
+        setFailure(translate('syncForbidden'));
       } else setFailure(translate('syncError'));
     } finally { setBusy(false); }
   };
@@ -90,6 +93,8 @@ export function TripSyncPanel({ trip, locale }: { trip: TripDetails; locale: Loc
       if (error instanceof SyncClientError && error.status === 409) {
         setConflict(error.current);
         setFailure(error.current ? translate('syncConflict') : translate('syncCloudUnavailable'));
+      } else if (error instanceof SyncClientError && error.status === 403) {
+        setFailure(translate('syncForbidden'));
       } else setFailure(translate('syncError'));
     }
     finally { setBusy(false); }
@@ -98,7 +103,8 @@ export function TripSyncPanel({ trip, locale }: { trip: TripDetails; locale: Loc
   const pending = !syncState || syncState.accountId !== session?.account.id
     || syncState.localRevision !== trip.trip.revision;
 
-  return <section className="trip-sync-panel" aria-labelledby="trip-sync-heading">
+  return <>
+    <section className="trip-sync-panel" aria-labelledby="trip-sync-heading">
     <h2 id="trip-sync-heading">{translate('syncTitle')}</h2>
     {!session ? <p className="muted"><Link to="/settings">{translate('syncSignIn')}</Link></p> : <>
       <p className="muted" role="status">{pending ? translate('syncPending') : translate('syncDone')}</p>
@@ -111,5 +117,7 @@ export function TripSyncPanel({ trip, locale }: { trip: TripDetails; locale: Loc
       </div>}
     </>}
     {failure && <p className="trip-error" role="alert">{failure}</p>}
-  </section>;
+    </section>
+    <TripCollaborationPanel trip={trip.trip} locale={locale} />
+  </>;
 }

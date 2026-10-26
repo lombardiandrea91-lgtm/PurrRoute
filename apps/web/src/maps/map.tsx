@@ -21,6 +21,7 @@ import {
 import type { Coordinate, PlaceCandidate, RoadRoute, RouteProfile } from './adapters.ts';
 import { createOfflineTilePlan, downloadOfflineTilePlan } from './offline.ts';
 import type { OfflineBounds } from './offline.ts';
+import { ArrivalAlerts } from './arrival-alerts.tsx';
 import './map.css';
 
 setWorkerUrl(maplibreWorkerUrl);
@@ -674,6 +675,8 @@ export function MapWorkspace({ locale }: MapWorkspaceProps) {
               </select>
             </label>
           </div>
+
+          <ArrivalAlerts tripId={tripId} stops={details.stops} locale={locale} />
 
           <form className="map-search-form" onSubmit={(event) => void searchPlaces(event)}>
             <label className="map-search-label">{translate('mapSearchPlaces')}

@@ -128,6 +128,25 @@ export const SyncTripSchema = Type.Object({
   timeZone: Type.Union([Type.String({ maxLength: 100 }), Type.Null()]),
 }, { additionalProperties: false });
 
+export const TripCollaboratorSchema = Type.Object({
+  userId: Type.String({ format: 'uuid' }),
+  email: Type.String({ format: 'email', maxLength: 254 }),
+  role: Type.Union([Type.Literal('owner'), Type.Literal('editor'), Type.Literal('viewer')]),
+}, { additionalProperties: false });
+
+export const TripCollaboratorsResponseSchema = Type.Object({
+  members: Type.Array(TripCollaboratorSchema, { maxItems: 100 }),
+}, { additionalProperties: false });
+
+export const AddTripCollaboratorRequestSchema = Type.Object({
+  email: Type.String({ format: 'email', maxLength: 254 }),
+  role: Type.Union([Type.Literal('editor'), Type.Literal('viewer')]),
+}, { additionalProperties: false });
+
+export type TripCollaborator = Type.Static<typeof TripCollaboratorSchema>;
+export type TripCollaboratorsResponse = Type.Static<typeof TripCollaboratorsResponseSchema>;
+export type AddTripCollaboratorRequest = Type.Static<typeof AddTripCollaboratorRequestSchema>;
+
 export const SyncDaySchema = Type.Object({
   ...SyncMetadataSchema,
   tripId: Type.String({ format: 'uuid' }),

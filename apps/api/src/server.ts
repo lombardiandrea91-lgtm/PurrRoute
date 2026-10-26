@@ -47,6 +47,8 @@ import { registerExploreRoutes } from './explore/routes.ts';
 import type { ExploreServices } from './explore/routes.ts';
 import { registerLinkImportRoutes } from './import/routes.ts';
 import type { LinkImportService } from './import/routes.ts';
+import { registerTripCollaborationRoutes } from './collaboration/routes.ts';
+import type { TripCollaborationService } from './collaboration/routes.ts';
 
 type AuthRoutes = Pick<
   AuthService,
@@ -69,6 +71,7 @@ export interface BuildServerOptions {
   sync?: SyncRoutes;
   explore?: ExploreServices;
   linkImport?: LinkImportService;
+  collaboration?: TripCollaborationService;
   mailSink?: DevelopmentMailSink;
   production?: boolean;
   webOrigin?: string;
@@ -124,6 +127,7 @@ function addSyncRoutes(
         200: SyncTripResponseSchema,
         400: ApiErrorSchema,
         401: ApiErrorSchema,
+        403: ApiErrorSchema,
         404: ApiErrorSchema,
         409: SyncConflictSchema,
       },
@@ -136,6 +140,7 @@ function addSyncRoutes(
     try {
       const result = await sync.pushTrip(session.account.id, request.body);
       if (result.kind === 'not_found') return reply.code(404).send({ error: 'trip_not_found' });
+      if (result.kind === 'forbidden') return reply.code(403).send({ error: 'sync_forbidden' });
       if (result.kind === 'conflict') {
         return reply.code(409).send({ error: 'sync_conflict', current: result.current });
       }
@@ -332,6 +337,11 @@ export function buildServer(options: BuildServerOptions = {}) {
   registerExploreRoutes(app, options.explore);
   if (options.linkImport) {
     app.register(async (importer) => registerLinkImportRoutes(importer, options.linkImport));
+  }
+  if (options.auth && options.collaboration) {
+    app.register(async (collaboration) => registerTripCollaborationRoutes(
+      collaboration, options.auth as AuthRoutes, options.collaboration as TripCollaborationService, production,
+    ));
   }
 
   return app;

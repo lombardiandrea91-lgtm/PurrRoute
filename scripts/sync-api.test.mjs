@@ -26,6 +26,7 @@ const current = {
 
 test('sync HTTP richiede sessione e protegge push con Origin e CSRF', async (context) => {
   let calls = 0;
+  let pushResult = { kind: 'conflict', current };
   const app = buildServer({
     auth: {
       authenticate: async (token) => token === 'session-ok' ? { account, expiresAt: '2026-11-02T12:00:00.000Z' } : null,
@@ -33,7 +34,7 @@ test('sync HTTP richiede sessione e protegge push con Origin e CSRF', async (con
     sync: {
       listTrips: async (userId) => userId === account.id ? [current] : [],
       getTrip: async (userId) => userId === account.id ? current : null,
-      pushTrip: async () => { calls += 1; return { kind: 'conflict', current }; },
+      pushTrip: async () => { calls += 1; return pushResult; },
     },
   });
   context.after(() => app.close());
@@ -77,4 +78,19 @@ test('sync HTTP richiede sessione e protegge push con Origin e CSRF', async (con
   });
   assert.equal(originDenied.statusCode, 403);
   assert.equal(calls, 1);
+
+  pushResult = { kind: 'forbidden' };
+  const freshCsrf = await app.inject({ method: 'GET', url: '/api/auth/csrf' });
+  const readOnly = await app.inject({
+    method: 'POST', url: '/api/sync/trips',
+    headers: {
+      cookie: `${String(freshCsrf.headers['set-cookie']).split(';')[0]}; purrroute_session=session-ok`,
+      'content-type': 'application/json', origin: 'http://localhost:5173',
+      'x-csrf-token': freshCsrf.json().csrfToken,
+    },
+    payload: { expectedVersion: 0, trip: current.trip, days: [], stops: [], lists: [], listItems: [], expenses: [] },
+  });
+  assert.equal(readOnly.statusCode, 403);
+  assert.deepEqual(readOnly.json(), { error: 'sync_forbidden' });
+  assert.equal(calls, 2);
 });

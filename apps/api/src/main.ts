@@ -5,6 +5,7 @@ import { LocationIqAdapter } from './maps/locationiq-adapter.ts';
 import { PostgresSyncRepository } from './sync/postgres-sync-repository.ts';
 import { WikidataExploreAdapter } from './explore/wikidata-adapter.ts';
 import { LinkMetadataAdapter } from './import/link-metadata-adapter.ts';
+import { PostgresTripCollaborationRepository } from './collaboration/postgres-trip-collaboration.ts';
 import { buildServer, type BuildServerOptions } from './server.ts';
 
 const environment = process.env;
@@ -28,10 +29,11 @@ if (!Number.isSafeInteger(port) || port < 1 || port > 65535) {
 const database = createPostgresDatabase(connectionString);
 const repository = new PostgresAuthRepository(database);
 const sync = new PostgresSyncRepository(database);
+const collaboration = new PostgresTripCollaborationRepository(database);
 const mailSink = new DevelopmentMailSink();
 const auth = new AuthService(repository, mailSink);
 const options: BuildServerOptions = {
-  auth, mailSink, production, sync, explore: new WikidataExploreAdapter(),
+  auth, mailSink, production, sync, collaboration, explore: new WikidataExploreAdapter(),
   linkImport: new LinkMetadataAdapter(),
 };
 if (environment.WEB_ORIGIN) options.webOrigin = webOrigin;

@@ -91,6 +91,7 @@ interface ExpenseRow extends Record<string, unknown> {
 export type SyncPushResult =
   | { kind: 'saved'; snapshot: SyncTripResponse }
   | { kind: 'conflict'; current: SyncTripResponse | null }
+  | { kind: 'forbidden' }
   | { kind: 'not_found' };
 
 export class SyncPayloadError extends Error {
@@ -210,7 +211,13 @@ async function readSnapshot(
   tripId: string,
 ): Promise<SyncTripResponse | null> {
   const result = await connection.query<TripRow>(
-    `SELECT * FROM trips WHERE id = $1 AND owner_id = $2`,
+    `SELECT * FROM trips WHERE id = $1 AND (
+      owner_id = $2 OR EXISTS (
+        SELECT 1 FROM trip_memberships membership
+        WHERE membership.trip_id = trips.id AND membership.user_id = $2
+          AND membership.role IN ('editor', 'viewer') AND membership.deleted_at IS NULL
+      )
+    )`,
     [tripId, userId],
   );
   const trip = result.rows[0];
@@ -295,7 +302,13 @@ export class PostgresSyncRepository {
   listTrips(userId: string): Promise<SyncTripResponse[]> {
     return this.database.transaction(async (connection) => {
       const result = await connection.query<{ id: string }>(
-        `SELECT id FROM trips WHERE owner_id = $1 AND deleted_at IS NULL
+        `SELECT trips.id FROM trips WHERE deleted_at IS NULL AND (
+            owner_id = $1 OR EXISTS (
+              SELECT 1 FROM trip_memberships membership
+              WHERE membership.trip_id = trips.id AND membership.user_id = $1
+                AND membership.role IN ('editor', 'viewer') AND membership.deleted_at IS NULL
+            )
+          )
           ORDER BY updated_at DESC, id LIMIT 1000`,
         [userId],
       );
@@ -325,7 +338,14 @@ export class PostgresSyncRepository {
           `UPDATE trips SET title = $3, description = $4, starts_on = $5, ends_on = $6,
               time_zone = $7, revision = GREATEST(revision + 1, $8), updated_at = now(),
               deleted_at = $9, sync_version = sync_version + 1
-            WHERE id = $1 AND owner_id = $2 AND sync_version = $10
+            WHERE id = $1 AND sync_version = $10
+              AND (
+                owner_id = $2 OR EXISTS (
+                  SELECT 1 FROM trip_memberships membership
+                  WHERE membership.trip_id = trips.id AND membership.user_id = $2
+                    AND membership.role = 'editor' AND membership.deleted_at IS NULL
+                )
+              )
             RETURNING sync_version`,
           [trip.id, userId, trip.title, trip.description, trip.startsOn, trip.endsOn,
             trip.timeZone, trip.revision, trip.deletedAt, request.expectedVersion],
@@ -334,6 +354,19 @@ export class PostgresSyncRepository {
 
       if (versionResult.rows.length === 0) {
         const current = await readSnapshot(connection, userId, trip.id);
+        if (current) {
+          const permission = await connection.query<{ can_edit: boolean }>(
+            `SELECT EXISTS (
+              SELECT 1 FROM trips
+              WHERE id = $1 AND owner_id = $2
+            ) OR EXISTS (
+              SELECT 1 FROM trip_memberships
+              WHERE trip_id = $1 AND user_id = $2 AND role = 'editor' AND deleted_at IS NULL
+            ) AS can_edit`,
+            [trip.id, userId],
+          );
+          if (!permission.rows[0]?.can_edit) return { kind: 'forbidden' as const };
+        }
         return current || request.expectedVersion === 0
           ? { kind: 'conflict' as const, current }
           : { kind: 'not_found' as const };

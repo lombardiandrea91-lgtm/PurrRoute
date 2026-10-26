@@ -1,6 +1,6 @@
 # Struttura del repository
 
-Stato: passi 4-10 implementati localmente. Passo 4: dominio, contratti, API, repository e
+Stato: passi 4-12 implementati localmente. Passo 4: dominio, contratti, API, repository e
 migrazioni presenti; server PostgreSQL/email produzione restano da verificare.
 Passo 5: core viaggi locale Dexie. Passo 6: MapLibre, OpenFreeMap e adapter API
 geospaziali presenti; LocationIQ resta opt-in, ORS non selezionato. I due kit
@@ -51,10 +51,12 @@ Al passo 2 nasce il design system. Al passo 3 nasce il client PWA; al passo 4
 backend e schema; al passo 5 il nucleo locale; al passo 7 sync owner-only e mappe
 offline limitate; al passo 8 checklist/packing e spese; al passo 9 Esplora Wikidata
 esplicito con ranking per distanza; al passo 10 preview link e screenshot locale
-con aggiunta esplicita. AI, OCR e storage esterno restano disattivati. ID stabili,
+con aggiunta esplicita; al passo 11 membership owner/editor/viewer con ACL sul server;
+al passo 12 avvisi di prossimità foreground-only, senza persistenza della posizione.
+AI, OCR, tracking in background e Web Push remoto restano disattivati. ID stabili,
 revisioni e tombstone sono usati; conflitti restituiscono
 409 e richiedono scelta esplicita, senza merge automatico. Retry idempotenti e
-collaborazione restano da completare.
+merge collaborativo restano da completare.
 
 Le versioni backend sono registrate in ADR-0015; le scelte degli altri moduli
 restano nei rispettivi ADR. I file ambiente server non entrano nel repository;

@@ -14,11 +14,18 @@ come MVP:
 MapLibre/OpenFreeMap, pin, cluster, selezione lista↔mappa e inserimento manuale di
 coordinate. Geocoding/routing LocationIQ restano opt-in con verifica privacy/termini
 aperta; ORS non è selezionato. Passo 7 implementato e verificato localmente:
-sync manuale owner-only con conflitti espliciti e download di una singola area tile
+sync manuale con conflitti espliciti e download di una singola area tile
 entro i limiti OpenFreeMap. Passo 8 implementato localmente: checklist/valigia e
 registro spese con subtotali per valuta; partecipa alla sync del viaggio.
 Passo 9 implementato come Esplora culturale locale: musei e parchi Wikidata vicini a
 una tappa, con aggiunta esplicita; AI e Overpass restano spenti.
+Passo 10 implementato: preview manuale dei metadati link e trascrizione screenshot
+solo locale. Passo 11 implementato localmente: membership owner/editor/viewer,
+condivisione con account verificati, accesso viewer in sola lettura e revoca immediata.
+Non invia inviti email: email di produzione ancora da verificare.
+Passo 12 implementato come avvisi locali di prossimità: opt-in, solo mentre la
+mappa è visibile, posizione non salvata né inviata. Web Push in background resta
+spento e richiede VAPID e verifiche browser/server.
 PostgreSQL reale, email di produzione e account reali restano da verificare;
 non è un backup né una sync in background.
 Dal 2026-10-26 l'utente autorizza a procedere senza approvazioni intermedie,
@@ -55,6 +62,9 @@ preservando ordine dei passi, budget e vincoli.
 | [0018](docs/adr/0018-offline-maps-and-sync.md) | Sync owner-only e cache tile limitata |
 | [0019](docs/adr/0019-trip-logistics.md) | Checklist, packing list e spese locali |
 | [0020](docs/adr/0020-explore-and-recommendations.md) | Esplora culturale, Wikidata e ranking trasparente |
+| [0021](docs/adr/0021-link-and-screenshot-import.md) | Import manuale link/screenshot e protezioni SSRF |
+| [0022](docs/adr/0022-trip-collaboration.md) | Membership e ruoli nella sync condivisa |
+| [0023](docs/adr/0023-foreground-location-alerts.md) | Posizione foreground e avvisi locali |
 
 ## Consultazione e avvio
 
@@ -115,7 +125,7 @@ I due originali sono preservati, compreso il refuso sul numero delle categorie.
 - Confermare budget API e hosting di 0 EUR/mese e stop alle quote gratuite esaurite.
 - Confermare italiano e inglese, email/password e uso locale senza account.
 - Verificare la separazione tra fatti, ipotesi e decisioni aperte nelle fondamenta.
-- Aprire tutti i 17 ADR e controllare motivazioni, alternative, conseguenze e fonti.
+- Aprire tutti i 23 ADR e controllare motivazioni, alternative, conseguenze e fonti.
 - Aprire Mappa, selezionare un viaggio, controllare pin/cluster e provare selezione
 	lista↔mappa e inserimento manuale da click.
 - Verificare che tile non siano in cache service worker e che LocationIQ resti

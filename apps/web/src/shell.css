@@ -75,6 +75,13 @@ h2 { font-size: 16px; font-weight: 600; margin: 0; }
 .trip-sync-panel { display: grid; justify-items: start; gap: 10px; margin-top: 24px; padding: 18px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .trip-sync-panel h2, .trip-sync-panel p { margin: 0; }
 .trip-sync-conflict { padding-left: 12px; border-left: 3px solid var(--action); }
+.trip-collaboration-panel { display: grid; justify-items: start; gap: 10px; margin-top: 22px; }
+.trip-collaboration-panel h2, .trip-collaboration-panel p { margin: 0; }
+.collaborator-list { width: min(100%, 820px); margin: 4px 0; padding: 0; list-style: none; }
+.collaborator-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.collaborator-email { min-width: 0; overflow-wrap: anywhere; }
+.collaborator-role, .collaboration-disclosure { color: var(--secondary); font-size: 13px; }
+.collaboration-form { width: min(100%, 820px); }
 .trip-cloud-panel { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
 .trip-cloud-panel h2 { margin-bottom: 12px; }
 .trip-cloud-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
@@ -179,6 +186,9 @@ input { accent-color: var(--action); }
   .logistics-expense-list .logistics-remove { grid-column: 1 / -1; justify-self: start; }
   .explore-workspace { padding: 28px 20px; }
   .import-workspace { padding: 28px 20px; }
+  .collaborator-list li { grid-template-columns: minmax(0, 1fr) auto; }
+  .collaborator-role { grid-column: 1; }
+  .collaborator-list .trip-button { grid-column: 2; grid-row: 1 / span 2; }
   .explore-controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .explore-controls label:nth-child(1), .explore-controls label:nth-child(2), .explore-controls button { grid-column: 1 / -1; }
   .explore-results li { grid-template-columns: minmax(0, 1fr) auto; }

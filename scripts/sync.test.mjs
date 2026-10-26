@@ -156,3 +156,45 @@ test('sync PostgreSQL applica snapshot atomici, versioni ottimistiche e ownershi
   await engine.exec(captureSql(downSchedule));
   await engine.exec(captureSql(downCore));
 });
+
+test('membership attiva permette al collaboratore di leggere lo snapshot', async (context) => {
+  const viewerId = '20000000-0000-4000-8000-000000000010';
+  const engine = new PGlite();
+  context.after(() => engine.close());
+  await engine.exec(captureSql(upCore));
+  await engine.exec(captureSql(upSchedule));
+  await engine.exec(captureSql(upLocationSource));
+  await engine.exec(captureSql(upSyncVersion));
+  await engine.exec(captureSql(upWikidataSource));
+  await engine.exec(captureSql(upStopSourceUrl));
+  await engine.query(
+    'INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3), ($4, $5, $6), ($7, $8, $9)',
+    [ownerId, 'owner-share@example.test', 'hash', otherOwnerId, 'editor-share@example.test', 'hash',
+      viewerId, 'viewer-share@example.test', 'hash'],
+  );
+
+  const repository = new PostgresSyncRepository(adaptPostgres(engine));
+  const initial = await repository.pushTrip(ownerId, snapshot());
+  assert.equal(initial.kind, 'saved');
+  await engine.query(
+    `INSERT INTO trip_memberships (id, trip_id, user_id, role)
+      VALUES ($1, $2, $3, 'editor'), ($4, $2, $5, 'viewer')`,
+    ['20000000-0000-4000-8000-000000000009', tripId, otherOwnerId,
+      '20000000-0000-4000-8000-000000000011', viewerId],
+  );
+
+  const shared = await repository.getTrip(otherOwnerId, tripId);
+  assert.ok(shared);
+  assert.equal(shared.trip.id, tripId);
+  const editorUpdate = snapshot('Roma modificata dall’editor');
+  editorUpdate.expectedVersion = 1;
+  const edited = await repository.pushTrip(otherOwnerId, editorUpdate);
+  assert.equal(edited.kind, 'saved');
+  assert.equal(edited.snapshot.trip.title, 'Roma modificata dall’editor');
+
+  const viewerSnapshot = await repository.getTrip(viewerId, tripId);
+  assert.ok(viewerSnapshot);
+  const viewerUpdate = snapshot('Il viewer non può salvare');
+  viewerUpdate.expectedVersion = edited.snapshot.version;
+  assert.deepEqual(await repository.pushTrip(viewerId, viewerUpdate), { kind: 'forbidden' });
+});
